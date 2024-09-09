@@ -15,8 +15,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={inter.className}>{children}</body>
+    <html  className="h-screen w-screen" lang="en">
+      <body className="h-screen w-screen">{children}</body>
     </html>
   );
 }
