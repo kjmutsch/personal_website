@@ -2,7 +2,8 @@ import './svg.css'
 
 export default function Start() {
 	return (
-        <svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1618.28 813.12">
+        <svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1618.28 813.12"
+        className="absolute inset-0 w-full h-full">
           <defs>
             <clipPath id="clippath">
               <rect x="63.28" y="3.01" width="1366" height="768" fill='none' strokeWidth='0px'/>

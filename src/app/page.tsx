@@ -21,7 +21,7 @@ export default function Home() {
     // <h1 className="flex-1 min-h-screen w-screen bg-no-repeat"  style={{
     //     backgroundImage: `url("data:image/svg+xml,${svgString}")`
     //   }}>
-    <div className="h-screen w-screen">
+    <div className="relative h-screen w-screen overflow-hidden">
       <Background />
       <AudioPlayer onFinish={() => setPlaySubmitSound(false)} play={true} src="/LatinHouseBed.mp3" />
       {/* <div className="flex-1 size-full">
