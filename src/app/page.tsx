@@ -24,11 +24,11 @@ export default function Home() {
     <div className="h-screen w-screen">
       <Background />
       <AudioPlayer onFinish={() => setPlaySubmitSound(false)} play={true} src="/LatinHouseBed.mp3" />
-      <div className="flex-1 size-full">
+      {/* <div className="flex-1 size-full">
         <button className="flex-1 size-full" onClick={startButtonClick}>
           <Start />
         </button>
-      </div>
+      </div> */}
      {/* </h1> */}
         </div>
   );
