@@ -1,6 +1,6 @@
 "use client"; // This is a client component 👈🏽
 import { useState } from "react";
-import Background from "./components/Background_Final";
+import Background from "./components/Background";
 import Start from "./components/Start"
 import AudioPlayer from "./components/AudioPlayer";
 import useSound from 'use-sound'
