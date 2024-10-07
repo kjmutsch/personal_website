@@ -1,0 +1,31 @@
+/* Iris.css */
+.iris-container {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  background-color: black;
+}
+
+.iris {
+  position: absolute;
+  width: 100vw;
+  height: 100vh;
+  mask: url(#circle-mask); /* Apply the SVG mask to create the transparent circle */
+  animation: iris-close-open 4s ease-in-out forwards;
+}
+
+@keyframes iris-close-open {
+  0% {
+    mask-size: 200%; /* Start with a large transparent circle */
+  }
+  45% {
+    mask-size: 0%; /* Circle shrinks to fully cover the screen */
+  }
+  55% {
+    mask-size: 0%; /* Stay fully black for a moment */
+  }
+  100% {
+    mask-size: 200%; /* Circle expands back out to reveal Background */
+  }
+}

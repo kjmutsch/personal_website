@@ -1,35 +1,58 @@
 "use client"; // This is a client component 👈🏽
 import { useState } from "react";
 import Background from "./components/Background";
-import Start from "./components/Start"
+import Start from "./components/Start";
 import AudioPlayer from "./components/AudioPlayer";
-import useSound from 'use-sound'
-import { Button } from "@/components/ui/button"
-import { renderToStaticMarkup } from 'react-dom/server';
+import useSound from 'use-sound';
+import Iris from "./components/Iris"; // Import Iris
 
 export default function Home() {
   const [playSubmitSound, setPlaySubmitSound] = useState(false);
-  const [play] = useSound('/LatinHouseBed.mp3')
-  const [onStart, setOnStart] = useState(true);
+  const [play] = useSound('/LatinHouseBed.mp3');
+  const [onStart, setOnStart] = useState(true); // Show the Start button initially
+  const [showIris, setShowIris] = useState(false); // Trigger iris animation
+  const [showBackground, setShowBackground] = useState(false); // Show background after animation
 
-  function startButtonClick() {
+  const handleStart = () => {
+    // Play the sound and start the iris animation
     play();
-    setOnStart(false);
-  }
+    setShowIris(true); // Trigger the iris animation
+
+    // After 1.8 seconds, hide Start and show Background
+    setTimeout(() => {
+      setShowBackground(true); // Reveal the background
+      setOnStart(false); // Hide the Start button
+    }, 1800); // Iris closing duration
+
+    // After 4 seconds, hide the iris animation
+    setTimeout(() => {
+      setShowIris(false); // Hide iris animation after it's done
+    }, 4000); // Full animation duration
+  };
 
   return (
-    // <h1 className="flex-1 min-h-screen w-screen bg-no-repeat"  style={{
-    //     backgroundImage: `url("data:image/svg+xml,${svgString}")`
-    //   }}>
     <div className="relative h-screen w-screen overflow-hidden">
-      <Background />
-      <AudioPlayer onFinish={() => setPlaySubmitSound(false)} play={true} src="/LatinHouseBed.mp3" />
-      {/* <div className="flex-1 size-full">
-        <button className="flex-1 size-full" onClick={startButtonClick}>
+      {/* Conditionally show the Background */}
+      {showBackground && <Background />}
+
+      {/* Initially, show the Start button */}
+      {onStart && (
+        <button onClick={handleStart}>
           <Start />
         </button>
-      </div> */}
-     {/* </h1> */}
-        </div>
+      )}
+
+      {/* Show Iris transition */}
+      <Iris trigger={showIris} />
+
+      {/* Hidden AudioPlayer */}
+      <div style={{ display: 'none' }}>
+        <AudioPlayer
+          onFinish={() => setPlaySubmitSound(false)}
+          play={true}
+          src="/LatinHouseBed.mp3"
+        />
+      </div>
+    </div>
   );
 }

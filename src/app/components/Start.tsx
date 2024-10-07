@@ -3,8 +3,10 @@ import './svg.css'
 export default function Start() {
 	return (
 
-<svg version="1.1" id="drawing" xmlns="http://www.w3.org/2000/svg" x="0px" y="0px"
-	 viewBox="0 0 960 560" className="svg">
+<svg version="1.1" id="drawing" 
+	className="absolute inset-0 w-full h-full"
+ xmlns="http://www.w3.org/2000/svg" x="0px" y="0px"
+	 viewBox="0 0 960 560">
 <path className="st0" d="M251,143.34c-7.23,3.08-12.44,9.95-14.61,17.49c-2.17,7.55-1.55,15.69,0.57,23.25
 	c1.63,5.8,4.11,11.34,5.7,17.15c3.51,12.81,2.57,26.47-0.07,39.48c-2.64,13.02-6.94,25.64-10.15,38.53
 	c-0.84,3.35-1.6,6.85-0.87,10.22c0.69,3.2,2.64,5.95,4.34,8.74c9.55,15.64,12.05,35.42,6.69,52.95
