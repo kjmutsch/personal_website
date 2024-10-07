@@ -1,6 +1,6 @@
 import './svg.css'
 
-export default function Start() {
+export default function Background() {
 	return (
         <svg id="Layer_1" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1618.28 813.12"
         className="absolute inset-0 w-full h-full">
