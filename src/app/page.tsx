@@ -32,8 +32,7 @@ export default function Home() {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden">
-      {/* Conditionally show the Background */}
-      {showBackground && <Background />}
+        <Background />
 
       {/* Initially, show the Start button */}
       {onStart && (
