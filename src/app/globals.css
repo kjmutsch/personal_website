@@ -9,6 +9,35 @@ html, body, #__next, .h-screen,.w-screen{
   padding: 0;
 }
 
+.App {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.character {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+}
+
+.body {
+  position: relative;
+}
+
+.left-arm, .right-arm {
+  position: absolute;
+  top: 10px; /* Adjust these values based on your character's size */
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+
 @layer base {
   :root {
     --background: 0 0% 100%;

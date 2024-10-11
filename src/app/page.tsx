@@ -5,6 +5,7 @@ import Start from "./components/Start";
 import AudioPlayer from "./components/AudioPlayer";
 import useSound from 'use-sound';
 import Iris from "./components/Iris"; // Import Iris
+import Robot from "./components/Robot";
 
 export default function Home() {
   const [playSubmitSound, setPlaySubmitSound] = useState(false);
@@ -32,7 +33,7 @@ export default function Home() {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden">
-        <Background />
+      <Background />
 
       {/* Initially, show the Start button */}
       {onStart && (
@@ -40,6 +41,8 @@ export default function Home() {
           <Start />
         </button>
       )}
+
+      {showBackground && <Robot />}
 
       {/* Show Iris transition */}
       <Iris trigger={showIris} />
