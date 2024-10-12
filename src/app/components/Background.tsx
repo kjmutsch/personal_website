@@ -4,7 +4,7 @@ export default function Background() {
 	return (
 	<svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" 
 	viewBox="0 0 1402 771"
-	preserveAspectRatio='none'
+	preserveAspectRatio='xMidYMid slice'
 	className="absolute inset-0 w-full h-full">
  	<defs>
     <linearGradient id="linear-gradient" x1="708.21" y1="548.78" x2="700.25" y2="9.17" gradientUnits="userSpaceOnUse">

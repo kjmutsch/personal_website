@@ -16,7 +16,7 @@ html, body, #__next, .h-screen,.w-screen{
   overflow: hidden;
 }
 
-.character {
+.bitly {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
