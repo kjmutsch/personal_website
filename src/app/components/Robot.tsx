@@ -9,10 +9,12 @@ interface RobotProps {
 function Robot({ready}: RobotProps) {
     const [introduction, setIntroduction] = useState(true); // If we're introducing Bitly we run a different animation
     const [position, setPosition] = useState(100); // Position for the character
-    const [isMoving, setIsMoving] = useState(false); // Track if Bitly is moving
+    const [isMovingForward, setIsMovingForward] = useState(false);
+    const [isMovingBackward, setIsMovingBackward] = useState(false); // Track if Bitly is moving
     const [isRotating, setIsRotating] = useState(false); // Tires rotating or not
     const [jump, setJump] = useState(false); // Bitly currently jumping
-    const [isJumping, setIsJumping] = useState(false); 
+    const [isJumping, setIsJumping] = useState(false);
+    const [lastMovement, setLastMovement] = useState<string | null>(null); // saving last movement so I know what direction to animate tires
 
     const rotationValue = useMotionValue(0);
     
@@ -23,11 +25,23 @@ function Robot({ready}: RobotProps) {
     const jumpHeight = -20;
   
     // Function to start movement when key is held down
-    const startMovement = () => {
+    const startMovement = (forwards: boolean) => {
         if (!movementInterval.current) {
             movementInterval.current = window.setInterval(() => {
             setIsRotating(true);
-            setPosition((prevPosition) => prevPosition + 10); // Increase position by 10px every interval
+            setPosition((prevPosition) => {
+                const maxWidth = window.innerWidth;
+                const robotWidth = 75;
+                const newPos = forwards ? (prevPosition + 10) : (prevPosition - 10);
+
+                if((newPos + robotWidth) > maxWidth) {
+                    return prevPosition;
+                } else if (newPos < 0) {
+                    return 0;
+                }
+
+                return newPos;
+            });
             }, 50); // Update position every 50ms
         }
     };
@@ -49,16 +63,23 @@ function Robot({ready}: RobotProps) {
         } else if(event.key === " " && !isJumping) {
             setJump(true); // Trigger jump
         } 
-        
+
         if ((event.key === 'ArrowRight' || event.key === 'd') && !introduction && !isJumping) {
-            setIsMoving(true); // Start moving when key is pressed
+            setIsMovingForward(true); // Start moving when key is pressed
+            setLastMovement('ArrowRight')
+        }
+        if ((event.key === 'ArrowLeft' || event.key === 'a') && !introduction && !isJumping) {
+            setIsMovingBackward(true); // Start moving when key is pressed
+            setLastMovement('ArrowLeft')
         }
     };
 
     // Handle keyup events to stop motion
     const handleKeyUp = (event: KeyboardEvent) => {
         if (event.key === 'ArrowRight' || event.key === 'd') {
-            setIsMoving(false); // Stop the motion on key up
+            setIsMovingForward(false); // Stop the motion on key up
+        } else if ((event.key === 'ArrowLeft' || event.key === 'a')) {
+            setIsMovingBackward(false); // Start moving when key is pressed
         }
 
     };
@@ -83,8 +104,10 @@ function Robot({ready}: RobotProps) {
 
     // Use effect to start and stop the continuous movement
     useEffect(() => {
-        if (isMoving) {
-            startMovement();
+        if (isMovingForward) {
+            startMovement(true);
+        } else if (isMovingBackward) {
+            startMovement(false);
         } else {
             stopMovement();
         }
@@ -93,26 +116,27 @@ function Robot({ready}: RobotProps) {
         return () => {
             stopMovement();
         };
-    }, [isMoving]);
+    }, [isMovingForward, isMovingBackward]);
 
     useEffect(() => {
+        const rotVal = isMovingBackward || lastMovement === 'ArrowLeft' ? -360 : 360;
         if (isRotating) {
-            animate(rotationValue, rotationValue.get() + 360, {
+            animate(rotationValue, rotationValue.get() + rotVal, {
                 duration: 1,
                 ease: 'linear',
                 onUpdate: (latest) => {
-                    rotationValue.set(latest % 360); // Normalize the rotation between 0 and 360
+                    rotationValue.set(latest % rotVal); // Normalize the rotation between 0 and 360
                 },
                 repeat: Infinity
             });
         } else {
             // stopping, allow for a couple more rotations
-            animate(rotationValue, rotationValue.get() + 360, {
+            animate(rotationValue, rotationValue.get() + rotVal, {
                 duration: 1,
                 ease: 'easeOut', // Ease out smoothly
             });
         }
-    }, [isRotating, rotationValue]);
+    }, [isRotating, rotationValue, isMovingForward, isMovingBackward]);
 
     // Manage jump effect
     useEffect(() => {
@@ -127,8 +151,7 @@ function Robot({ready}: RobotProps) {
     }, [jump]);
 
     return (
-        <div className="Robot"
-            style={{ outline: 'none', position: 'relative', height: '100vh', overflow: 'hidden' }}
+        <div style={{ outline: 'none', position: 'relative', height: '100vh', overflow: 'hidden' }}
             tabIndex={0} // A div is not focusable by default and this makes div focusable
             ref={containerRef}
         >
@@ -156,12 +179,12 @@ function Robot({ready}: RobotProps) {
                 >
                     {/* Robot's body */}
                     <div className="body">
-                        <img src="/images/body.png" alt="Body" />
+                        <img src="/images/robot/body.png" alt="Body" />
                     </div>
 
                     {/* Left Arm */}
                     <motion.img
-                        src="images/robot_left.png"
+                        src="images/robot/robot_left.png"
                         className="left-arm"
                         animate={isRotating ? { rotate: [10, -10, 10] } : { rotate: 0 }}
                         transition={{
@@ -173,7 +196,7 @@ function Robot({ready}: RobotProps) {
 
                     {/* Right Arm */}
                     <motion.img
-                        src="images/robot_right.png"
+                        src="images/robot/robot_right.png"
                         className="right-arm"
                         animate={isRotating ? { rotate: [-10, 10, -10] } : { rotate: 0 }}
                         transition={{
@@ -185,14 +208,14 @@ function Robot({ready}: RobotProps) {
 
                     {/* Left Wheel */}
                     <motion.img
-                    src="images/robot_wheel.png"
+                    src="images/robot/robot_wheel.png"
                         className="left-wheel"
                         style={{ position: 'absolute', top: '95px', left: '20px', rotate: rotationValue }}
                     />
 
                     {/* Right Wheel */}
                     <motion.img
-                        src="images/robot_wheel.png"
+                        src="images/robot/robot_wheel.png"
                         className="right-wheel"
                         style={{ position: 'absolute', top: '95px', left: '50px', rotate: rotationValue }}
                     />
