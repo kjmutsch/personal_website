@@ -27,13 +27,6 @@ html, body, #__next, .h-screen,.w-screen{
   position: relative;
 }
 
-.speech {
-
-}
-
-.speech-bubble {
-}
-
 .left-arm, .right-arm {
   position: absolute;
   top: 10px; /* Adjust these values based on your character's size */
