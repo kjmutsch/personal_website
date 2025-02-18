@@ -1,26 +1,24 @@
 "use client";
-import React, { useEffect, useRef, useState } from 'react';
+import React, { Dispatch, SetStateAction, useEffect, useRef, useState } from 'react';
 import { animate, motion, useMotionValue } from 'framer-motion';
 
 interface RobotProps {
     ready: boolean;
+    setBackgroundPosition: Dispatch<SetStateAction<number>>;
 }
 
-function Robot({ready}: RobotProps) {
+function Robot({ready, setBackgroundPosition}: RobotProps) {
     const [introduction, setIntroduction] = useState(true); // If we're introducing Bitly we run a different animation
-    const [position, setPosition] = useState(100); // Position for the character
     const [isMovingForward, setIsMovingForward] = useState(false);
     const [isMovingBackward, setIsMovingBackward] = useState(false); // Track if Bitly is moving
     const [isRotating, setIsRotating] = useState(false); // Tires rotating or not
     const [jump, setJump] = useState(false); // Bitly currently jumping
-    const [isJumping, setIsJumping] = useState(false);
+    const jumpRef = useRef(false)
     const [lastMovement, setLastMovement] = useState<string | null>(null); // saving last movement so I know what direction to animate tires
 
-    const rotationValue = useMotionValue(0);
-    
+    const rotationValue = useMotionValue(0);    
     const containerRef = useRef<HTMLDivElement | null>(null);
     const movementInterval = useRef<number | null>(null); // Store interval ID for movement
-
     const groundYPosition = 55;
     const jumpHeight = -20;
   
@@ -28,21 +26,10 @@ function Robot({ready}: RobotProps) {
     const startMovement = (forwards: boolean) => {
         if (!movementInterval.current) {
             movementInterval.current = window.setInterval(() => {
-            setIsRotating(true);
-            setPosition((prevPosition) => {
-                const maxWidth = window.innerWidth;
-                const robotWidth = 75;
-                const newPos = forwards ? (prevPosition + 10) : (prevPosition - 10);
-
-                if((newPos + robotWidth) > maxWidth) {
-                    return prevPosition;
-                } else if (newPos < 0) {
-                    return 0;
-                }
-
-                return newPos;
-            });
-            }, 50); // Update position every 50ms
+                const moveSpeed = 10;
+                setIsRotating(true);
+                setBackgroundPosition((prev) => prev - (forwards ? moveSpeed / 2 : -(moveSpeed/2)));
+            }, 40); // Update position every 30ms
         }
     };
 
@@ -57,18 +44,20 @@ function Robot({ready}: RobotProps) {
 
     // Handle keydown events
     const handleKeyDown = (event: KeyboardEvent) => {
-        if (event.key === " " && introduction) {
+        if (event.key === " " && introduction && !jumpRef.current) {
             setJump(true);
+            jumpRef.current = true;
             setIntroduction(false);
-        } else if(event.key === " " && !isJumping) {
+        } else if(event.key === " " && !jumpRef.current) {
             setJump(true); // Trigger jump
+            jumpRef.current = true;
         } 
 
-        if ((event.key === 'ArrowRight' || event.key === 'd') && !introduction && !isJumping) {
+        if ((event.key === 'ArrowRight' || event.key === 'd') && !introduction) {
             setIsMovingForward(true); // Start moving when key is pressed
             setLastMovement('ArrowRight')
         }
-        if ((event.key === 'ArrowLeft' || event.key === 'a') && !introduction && !isJumping) {
+        if ((event.key === 'ArrowLeft' || event.key === 'a') && !introduction) {
             setIsMovingBackward(true); // Start moving when key is pressed
             setLastMovement('ArrowLeft')
         }
@@ -141,11 +130,11 @@ function Robot({ready}: RobotProps) {
     // Manage jump effect
     useEffect(() => {
         if (jump) {
-            const jumpDuration = 0.5;
+            const jumpDuration = 500;
             const jumpAnimation = setTimeout(() => {
                 setJump(false); // Reset jump
-            }, jumpDuration * 1000);
-
+                jumpRef.current = false;
+            }, jumpDuration);
             return () => clearTimeout(jumpAnimation);
         }
     }, [jump]);
@@ -159,13 +148,14 @@ function Robot({ready}: RobotProps) {
             <motion.div
                 className="bitly"
                 initial={{ x: '-50vw' }}
-                animate={{ x: introduction ? 100 : position }} // Move on the x-axis
+                animate={{ x: 100 }} // Move on the x-axis
                 transition={{
                     type: 'spring',
                     stiffness: 50,
                     damping: 15, // bounce
                     duration: introduction ? 1.5 : 0.5
                 }}
+                style={{ position: "absolute"}}
             >
                 {/* Bitly's body will jump by altering the y-axis here */}
                 <motion.div

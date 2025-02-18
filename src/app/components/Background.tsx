@@ -7,6 +7,9 @@ export default function Background() {
 	preserveAspectRatio='xMidYMid slice'
 	className="absolute inset-0 w-full h-full">
  	<defs>
+   <pattern id="bgPattern" patternUnits="userSpaceOnUse" width="50" height="50">
+          <image href="/your-background.svg" width="50" height="50" />
+    </pattern>
     <linearGradient id="linear-gradient" x1="708.21" y1="548.78" x2="700.25" y2="9.17" gradientUnits="userSpaceOnUse">
       <stop offset="0" stopColor="#fff"/>
       <stop offset="1" stopColor="#3c93aa"/>
