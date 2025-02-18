@@ -38,6 +38,7 @@ export default function Home() {
     <div className="relative h-screen w-screen overflow-hidden">
       <BackgroundWrapper position={backgroundPosition}/>
 
+      <img src="/images/sun.png" alt='Sun' className="absolute top-4 right-40 w-32 h-32"/>
       {/* Initially, show the Start button */}
       {onStart && (
         <button onClick={handleStart}>
