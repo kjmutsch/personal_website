@@ -43,17 +43,17 @@ function TextBubble({ready}: TextBubbleProps) {
     // Handle keydown event
     const handleKeyDown = (event: KeyboardEvent) => {
         if (event.key === " ") {
-            setDelayedReady(false);
+            setDelayedReady(false)
         }
     };
 
     return (
         <div ref={containerRef} className="speech overflow-auto" style={{ position: 'absolute', overflow: 'hidden', width: '650px', height: '400px', top: '320px'}}>
-        {delayedReady && (
-            <div className="speech-bubble">
-                <img src="/images/speech/BITLY_INTRO.png" alt="speech-bubble" style={{ width: '100%', height: '100%', objectFit: 'contain' }}/>
-            </div>
-        )}
+            {delayedReady && (
+                <div className="speech-bubble">
+                    <img src="/images/speech/BITLY_INTRO.png" alt="speech-bubble" style={{ width: '100%', height: '100%', objectFit: 'contain' }}/>
+                </div>
+            )}
     </div>
   );
 }
