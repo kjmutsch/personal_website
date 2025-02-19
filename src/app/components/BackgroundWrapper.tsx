@@ -1,4 +1,4 @@
-import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useRef, useState } from "react";
 
 interface BackgroundProps {
   position: number;
@@ -21,7 +21,35 @@ export default function BackgroundWrapper({ position, distantPosition, cloudPace
   const startY = (screenHeight / 2); // sun starts and ends here
   const peakY = 0; // 0 is the top
   const a = (startY-peakY) / Math.pow(h, 2);
-  const sunY = a * Math.pow(-sunX - h, 2) + peakY;
+  let sunY = a * Math.pow(-sunX - h, 2) + peakY;
+  sunY = Math.min(Math.max(sunY, -startY), startY); // clamp sunY within bounds
+
+  const [backgroundOpacity, setBackgroundOpacity] = useState(0.7);
+  const opacityRef = useRef(backgroundOpacity); // animation frame ref
+
+  useEffect(() => {
+    let animationFrameId: number;
+    const updateOpacity = () => {
+      const minOpacity = 0.1; // Brightest time (top of the screen)
+      const maxOpacity = 0.6; // Darkest time (bottom of the screen)
+
+      // Reverse brightness logic so that 0 is brightest and startY is darkest
+      const brightnessFactor = sunY / startY;
+
+      // Interpolated opacity value (higher when lower in the sky)
+      const newOpacity = minOpacity + (maxOpacity - minOpacity) * brightnessFactor;
+
+      // Smoothly update the state
+      opacityRef.current = newOpacity;
+      setBackgroundOpacity(opacityRef.current);
+
+      animationFrameId = requestAnimationFrame(updateOpacity);
+    };
+
+    updateOpacity(); // Start animation loop
+
+    return () => cancelAnimationFrame(animationFrameId); // Cleanup on unmount
+  }, [sunY])
 
   useEffect(() => {
     if((initialPosition - cloudPace) > window.innerWidth) { // it is off screen
@@ -35,8 +63,18 @@ export default function BackgroundWrapper({ position, distantPosition, cloudPace
     cloudPace
   ])
 
+  console.log(sunY)
+
   return (
     <>
+      <div
+        className="absolute inset-0 w-full h-full"
+        style={{
+          zIndex: 5, // Above the sky but below everything else
+          backgroundColor: `rgba(0, 0, 0, ${backgroundOpacity})`, // Dynamic darkness
+          transition: "background-color 0.2s ease-in-out", // Smooth transition
+        }}
+      />
       <div
         className="absolute inset-0 w-full h-full"
         style={{
@@ -47,8 +85,8 @@ export default function BackgroundWrapper({ position, distantPosition, cloudPace
           backgroundRepeat: "repeat-x",
         }}
       />
-
-<div className="absolute inset-0 w-full h-full" style={{ zIndex: 4, pointerEvents: "none" }}>
+  
+      <div className="absolute inset-0 w-full h-full" style={{ zIndex: 2, pointerEvents: "none" }}>
         <img 
           src="/images/sun.png" 
           alt="Sun" 
@@ -56,33 +94,20 @@ export default function BackgroundWrapper({ position, distantPosition, cloudPace
           style={{ 
             top: `${sunY}px`,
             right: `${-sunX - 80}px`, // Moves horizontally
-            
           }} 
         />
       </div>
 
-      <img 
-        src="/images/background/mountains.png" 
-        alt="Mountains" 
-        className="absolute w-full bottom-0"
-        style={{
-          zIndex: 3, 
-          top: '250px',
-          left: `${distantPosition}px`,
-        }}
-      />
-
-<div
+      <div
         className="absolute inset-0 w-full h-full"
         style={{
-          zIndex: 3, // ✅ Sun will now appear behind this but above the sky
+          zIndex: 3,
           backgroundImage: "url('/images/background/mountains.svg')",
           backgroundSize: "cover",
           backgroundRepeat: "repeat-x",
           backgroundPosition: `${distantPosition}px bottom`,
         }}
       />
-
 
       <img 
         src="/images/background/cloud.png" 

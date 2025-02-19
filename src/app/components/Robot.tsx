@@ -32,8 +32,7 @@ function Robot({ready, setBackgroundPosition, setDistantBackgroundPosition, setC
                 const parallaxSpeed = .5;
                 setIsRotating(true);
                 setBackgroundPosition((prev) => prev - (forwards ? moveSpeed / 2 : -(moveSpeed/2)));
-                setDistantBackgroundPosition((prev) => prev - (forwards ? moveSpeed : -(moveSpeed)));
-                //setDistantBackgroundPosition((prev) => prev - (forwards ? parallaxSpeed / 2 : -(parallaxSpeed/2)));
+                setDistantBackgroundPosition((prev) => prev - (forwards ? parallaxSpeed / 2 : -(parallaxSpeed/2)));
                 setCloudPosition((prev) => prev - (forwards ? parallaxSpeed : -(parallaxSpeed)));
             }, 20); // Update position every 30ms
         }
