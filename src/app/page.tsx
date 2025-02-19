@@ -42,9 +42,14 @@ export default function Home() {
       
       {/* Initially, show the Start button */}
       {onStart && (
-        <button onClick={handleStart}>
+          <div 
+          className="absolute w-full h-full flex justify-center items-center"
+          style={{ zIndex: 9999, pointerEvents: "auto" }}
+        >
+        <button onClick={handleStart} style={{zIndex: 999}}>
           <Start />
         </button>
+        </div>
       )}
 
       {showBackground &&

@@ -146,7 +146,7 @@ function Robot({ready, setBackgroundPosition, setDistantBackgroundPosition, setC
     }, [jump]);
 
     return (
-        <div style={{ outline: 'none', position: 'relative', height: '100vh', overflow: 'hidden' }}
+        <div style={{ outline: 'none', position: 'relative', height: '100vh', overflow: 'hidden', zIndex: 5 }}
             tabIndex={0} // A div is not focusable by default and this makes div focusable
             ref={containerRef}
         >

@@ -50,7 +50,7 @@ function TextBubble({ready}: TextBubbleProps) {
     return (
         <div ref={containerRef} className="overflow-auto" style={{ position: 'absolute', overflow: 'hidden', width: '650px', height: '400px', top: '300px'}}>
             {delayedReady && (
-                <div>
+                <div style={{position: 'absolute',zIndex: 999}}>
                     <img src="/images/speech/BITLY_INTRO.png" alt="speech-bubble" style={{ width: '100%', height: '100%', objectFit: 'contain' }}/>
                 </div>
             )}

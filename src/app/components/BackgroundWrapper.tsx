@@ -13,16 +13,15 @@ export default function BackgroundWrapper({ position, distantPosition, cloudPace
   const screenWidth = typeof window !== "undefined" ? window.innerWidth : 1920;
   const screenHeight = typeof window !== "undefined" ? window.innerHeight : 1080;
 
-  const sunWidth = 150;
-  // Parabolic Movement
-  const sunX = ((distantPosition % (screenWidth + sunWidth)) + sunWidth); // ✅ Ensures the sun starts off-screen
-  const h = screenWidth / 2; // ✅ Midpoint where the sun reaches peak in X direction
-  const startY = screenHeight / 2; // ✅ Ensures the sun starts & ends in the middle of the Y-axis
-  const peakY = screenHeight * 0.3; // ✅ Peak height for a natural-looking arc
-  const a = -(startY - peakY) / Math.pow(h, 2); // ✅ Fixing the calculation for proper descent
+  const sunWidth = 125;
+  const sunX = ((distantPosition % (screenWidth + sunWidth))); // Ensures looping
 
-  // Compute the Y position using a parabolic equation
-  const sunY = a * Math.pow(sunX - h, 2) + startY; // ✅ Ensures a smooth rise & fall
+  // parabolic arc
+  const h = screenWidth / 2; // Midpoint (where the sun peaks in X)
+  const startY = (screenHeight / 2); // sun starts and ends here
+  const peakY = 0; // 0 is the top
+  const a = (startY-peakY) / Math.pow(h, 2);
+  const sunY = a * Math.pow(-sunX - h, 2) + peakY;
 
   useEffect(() => {
     if((initialPosition - cloudPace) > window.innerWidth) { // it is off screen
@@ -36,57 +35,80 @@ export default function BackgroundWrapper({ position, distantPosition, cloudPace
     cloudPace
   ])
 
-  console.log(sunX, sunY)
   return (
     <>
-      <img src="/images/sun.png" alt='Sun' 
-        className="absolute top-4 w-32 h-32"
-        style={{ 
-           top: `${Math.max(0, sunY)}px`,
-          // top: `${sunY}px`,
-
-          width: '125px',
-          right: `${-sunX - 80}px`, // Moves horizontally
-          zIndex: 3}}
-      />
       <div
         className="absolute inset-0 w-full h-full"
         style={{
+          zIndex: 0,
           overflow: "hidden",
-          backgroundImage: "url('/images/background/mountains.svg')",
+          backgroundImage: "url('/images/background/sky.svg')",
           backgroundSize: 'cover',
-          backgroundRepeat: "repeat-x", // Ensure seamless tiling
-          backgroundPosition: `${distantPosition}px 0px`, // Move background infinitely
-       }}
+          backgroundRepeat: "repeat-x",
+        }}
       />
-      <img src="/images/background/cloud.png" alt='Cloud' 
+
+<div className="absolute inset-0 w-full h-full" style={{ zIndex: 4, pointerEvents: "none" }}>
+        <img 
+          src="/images/sun.png" 
+          alt="Sun" 
+          className="absolute w-[125px]" 
+          style={{ 
+            top: `${sunY}px`,
+            right: `${-sunX - 80}px`, // Moves horizontally
+            
+          }} 
+        />
+      </div>
+
+      <img 
+        src="/images/background/mountains.png" 
+        alt="Mountains" 
+        className="absolute w-full bottom-0"
+        style={{
+          zIndex: 3, 
+          top: '250px',
+          left: `${distantPosition}px`,
+        }}
+      />
+
+<div
+        className="absolute inset-0 w-full h-full"
+        style={{
+          zIndex: 3, // ✅ Sun will now appear behind this but above the sky
+          backgroundImage: "url('/images/background/mountains.svg')",
+          backgroundSize: "cover",
+          backgroundRepeat: "repeat-x",
+          backgroundPosition: `${distantPosition}px bottom`,
+        }}
+      />
+
+
+      <img 
+        src="/images/background/cloud.png" 
+        alt='Cloud' 
         className="absolute"
-        style={{ zIndex: 2, 
+        style={{ 
+          zIndex: 4, 
           width: '150px', 
           height: '50px', 
           top: 200, 
-          right: `${(initialPosition - cloudPace)}px`, // once it hits max width plus width of cloud, wrap around
-          transform: "scaleX(-1)"}}
+          right: `${(initialPosition - cloudPace)}px`,
+          transform: "scaleX(-1)"
+        }} 
       />
-      {/* <img src="/images/background/cloud.png" alt='Cloud' 
-        className="absolute"
-        style={{ zIndex: 2, top: 40,
-          right: `${
-            (((40 - distantPosition * 1.5 + 150) % (window.innerWidth + 150)))
-          }px`
-        }}
-      /> */}
+
       <div
         className="absolute inset-0 w-full h-full"
         style={{
+          zIndex: 5,
           overflow: "hidden",
           backgroundImage: "url('/images/background/background.svg')",
-          backgroundSize: 'cover',
-          backgroundRepeat: "repeat-x", // Ensure seamless tiling
-          backgroundPosition: `${position}px 0px`, // Move background infinitely
+          backgroundSize: "cover",
+          backgroundRepeat: "repeat-x",
+          backgroundPosition: `${position}px 0px`,
         }}
       />
-
     </>
   );
 }
