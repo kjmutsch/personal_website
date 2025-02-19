@@ -6,9 +6,10 @@ interface RobotProps {
     ready: boolean;
     setBackgroundPosition: Dispatch<SetStateAction<number>>;
     setDistantBackgroundPosition: Dispatch<SetStateAction<number>>;
+    setCloudPosition: Dispatch<SetStateAction<number>>;
 }
 
-function Robot({ready, setBackgroundPosition, setDistantBackgroundPosition}: RobotProps) {
+function Robot({ready, setBackgroundPosition, setDistantBackgroundPosition, setCloudPosition}: RobotProps) {
     const [introduction, setIntroduction] = useState(true); // If we're introducing Bitly we run a different animation
     const [isMovingForward, setIsMovingForward] = useState(false);
     const [isMovingBackward, setIsMovingBackward] = useState(false); // Track if Bitly is moving
@@ -31,7 +32,9 @@ function Robot({ready, setBackgroundPosition, setDistantBackgroundPosition}: Rob
                 const parallaxSpeed = .5;
                 setIsRotating(true);
                 setBackgroundPosition((prev) => prev - (forwards ? moveSpeed / 2 : -(moveSpeed/2)));
-                setDistantBackgroundPosition((prev) => prev - (forwards ? parallaxSpeed / 2 : -(parallaxSpeed/2)));
+                setDistantBackgroundPosition((prev) => prev - (forwards ? moveSpeed : -(moveSpeed)));
+                //setDistantBackgroundPosition((prev) => prev - (forwards ? parallaxSpeed / 2 : -(parallaxSpeed/2)));
+                setCloudPosition((prev) => prev - (forwards ? parallaxSpeed : -(parallaxSpeed)));
             }, 20); // Update position every 30ms
         }
     };
