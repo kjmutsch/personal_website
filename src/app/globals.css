@@ -25,6 +25,7 @@ html, body, #__next, .h-screen,.w-screen{
 
 .body {
   position: relative;
+  top: -10px;
 }
 
 .left-arm, .right-arm {

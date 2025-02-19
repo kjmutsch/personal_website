@@ -5,9 +5,10 @@ import { animate, motion, useMotionValue } from 'framer-motion';
 interface RobotProps {
     ready: boolean;
     setBackgroundPosition: Dispatch<SetStateAction<number>>;
+    setDistantBackgroundPosition: Dispatch<SetStateAction<number>>;
 }
 
-function Robot({ready, setBackgroundPosition}: RobotProps) {
+function Robot({ready, setBackgroundPosition, setDistantBackgroundPosition}: RobotProps) {
     const [introduction, setIntroduction] = useState(true); // If we're introducing Bitly we run a different animation
     const [isMovingForward, setIsMovingForward] = useState(false);
     const [isMovingBackward, setIsMovingBackward] = useState(false); // Track if Bitly is moving
@@ -27,9 +28,11 @@ function Robot({ready, setBackgroundPosition}: RobotProps) {
         if (!movementInterval.current) {
             movementInterval.current = window.setInterval(() => {
                 const moveSpeed = 10;
+                const parallaxSpeed = .5;
                 setIsRotating(true);
                 setBackgroundPosition((prev) => prev - (forwards ? moveSpeed / 2 : -(moveSpeed/2)));
-            }, 40); // Update position every 30ms
+                setDistantBackgroundPosition((prev) => prev - (forwards ? parallaxSpeed / 2 : -(parallaxSpeed/2)));
+            }, 20); // Update position every 30ms
         }
     };
 
@@ -168,8 +171,8 @@ function Robot({ready, setBackgroundPosition}: RobotProps) {
                     }}
                 >
                     {/* Robot's body */}
-                    <div className="body">
-                        <img src="/images/robot/body.png" alt="Body" />
+                    <div className="body" >
+                        <img src="/images/robot/body.png" alt="Body"/>
                     </div>
 
                     {/* Left Arm */}
@@ -181,7 +184,7 @@ function Robot({ready, setBackgroundPosition}: RobotProps) {
                             duration: 0.5, // Duration of each swing
                             repeatType: "mirror", // Mirror the animation to swing back and forth
                         }}
-                        style={{ position: 'absolute', top: '55px', left: '-3px' }}
+                        style={{ position: 'absolute', top: '45px', left: '-3px' }}
                     />
 
                     {/* Right Arm */}
@@ -193,21 +196,21 @@ function Robot({ready, setBackgroundPosition}: RobotProps) {
                             duration: 0.5,
                             repeatType: "mirror",
                         }}
-                        style={{ position: 'absolute', top: '55px', left: '72px' }}
+                        style={{ position: 'absolute', top: '45px', left: '72px' }}
                     />
 
                     {/* Left Wheel */}
                     <motion.img
                     src="images/robot/robot_wheel.png"
                         className="left-wheel"
-                        style={{ position: 'absolute', top: '95px', left: '20px', rotate: rotationValue }}
+                        style={{ position: 'absolute', top: '85px', left: '20px', rotate: rotationValue }}
                     />
 
                     {/* Right Wheel */}
                     <motion.img
                         src="images/robot/robot_wheel.png"
                         className="right-wheel"
-                        style={{ position: 'absolute', top: '95px', left: '50px', rotate: rotationValue }}
+                        style={{ position: 'absolute', top: '85px', left: '50px', rotate: rotationValue }}
                     />
                 </motion.div>
             </motion.div>

@@ -14,6 +14,7 @@ export default function Home() {
   const [showIris, setShowIris] = useState(false); // Trigger iris animation
   const [showBackground, setShowBackground] = useState(false); // Show background after animation
   const [backgroundPosition, setBackgroundPosition] = useState(0);
+  const [distantBackgroundPosition, setDistantBackgroundPosition] = useState(0);
   const [ready, setReady] = useState(false);
   const coinRate = 1000;
 
@@ -36,9 +37,13 @@ export default function Home() {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden">
-      <BackgroundWrapper position={backgroundPosition}/>
+      <BackgroundWrapper position={backgroundPosition} distantPosition={distantBackgroundPosition}/>
 
-      <img src="/images/sun.png" alt='Sun' className="absolute top-4 right-40 w-32 h-32"/>
+      <img src="/images/sun.png" alt='Sun' 
+      className="absolute top-4 w-32 h-32"
+      style={{ right: `${40-distantBackgroundPosition}px`}}
+      />
+      
       {/* Initially, show the Start button */}
       {onStart && (
         <button onClick={handleStart}>
@@ -49,7 +54,7 @@ export default function Home() {
       {showBackground &&
         <div>
           <TextBubble ready={ready} />
-          <Robot ready={ready} setBackgroundPosition={setBackgroundPosition} />
+          <Robot ready={ready} setBackgroundPosition={setBackgroundPosition} setDistantBackgroundPosition={setDistantBackgroundPosition} />
         </div>
       }
 
