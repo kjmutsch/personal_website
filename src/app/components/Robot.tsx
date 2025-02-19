@@ -1,6 +1,8 @@
 "use client";
 import React, { Dispatch, SetStateAction, useEffect, useRef, useState } from 'react';
 import { animate, motion, useMotionValue } from 'framer-motion';
+import { useAppDispatch } from "../../redux/store";
+import { setIsMovingBackward, setIsMovingForwards } from "../../redux/appSlice";
 
 interface RobotProps {
     ready: boolean;
@@ -10,9 +12,10 @@ interface RobotProps {
 }
 
 function Robot({ready, setBackgroundPosition, setDistantBackgroundPosition, setCloudPosition}: RobotProps) {
+    const dispatch = useAppDispatch();
     const [introduction, setIntroduction] = useState(true); // If we're introducing Bitly we run a different animation
-    const [isMovingForward, setIsMovingForward] = useState(false);
-    const [isMovingBackward, setIsMovingBackward] = useState(false); // Track if Bitly is moving
+    const [isMovingForward, setMovingForward] = useState(false);
+    const [isMovingBackward, setMovingBackward] = useState(false); // Track if Bitly is moving
     const [isRotating, setIsRotating] = useState(false); // Tires rotating or not
     const [jump, setJump] = useState(false); // Bitly currently jumping
     const jumpRef = useRef(false)
@@ -32,7 +35,9 @@ function Robot({ready, setBackgroundPosition, setDistantBackgroundPosition, setC
                 const parallaxSpeed = .5;
                 setIsRotating(true);
                 setBackgroundPosition((prev) => prev - (forwards ? moveSpeed / 2 : -(moveSpeed/2)));
-                setDistantBackgroundPosition((prev) => prev - (forwards ? parallaxSpeed / 2 : -(parallaxSpeed/2)));
+                setDistantBackgroundPosition((prev) => prev - (forwards ? moveSpeed: -(moveSpeed)));
+
+                // setDistantBackgroundPosition((prev) => prev - (forwards ? parallaxSpeed : -(parallaxSpeed)));
                 setCloudPosition((prev) => prev - (forwards ? parallaxSpeed : -(parallaxSpeed)));
             }, 20); // Update position every 30ms
         }
@@ -59,11 +64,15 @@ function Robot({ready, setBackgroundPosition, setDistantBackgroundPosition, setC
         } 
 
         if ((event.key === 'ArrowRight' || event.key === 'd') && !introduction) {
-            setIsMovingForward(true); // Start moving when key is pressed
+            setMovingForward(true); // Start moving when key is pressed
+            dispatch(setIsMovingBackward(false));
+            dispatch(setIsMovingForwards(true));
             setLastMovement('ArrowRight')
         }
         if ((event.key === 'ArrowLeft' || event.key === 'a') && !introduction) {
-            setIsMovingBackward(true); // Start moving when key is pressed
+            setMovingBackward(true); // Start moving when key is pressed
+            dispatch(setIsMovingBackward(true));
+            dispatch(setIsMovingForwards(false));
             setLastMovement('ArrowLeft')
         }
     };
@@ -71,11 +80,12 @@ function Robot({ready, setBackgroundPosition, setDistantBackgroundPosition, setC
     // Handle keyup events to stop motion
     const handleKeyUp = (event: KeyboardEvent) => {
         if (event.key === 'ArrowRight' || event.key === 'd') {
-            setIsMovingForward(false); // Stop the motion on key up
+            setMovingForward(false); // Stop the motion on key up
+            dispatch(setIsMovingForwards(false));
         } else if ((event.key === 'ArrowLeft' || event.key === 'a')) {
-            setIsMovingBackward(false); // Start moving when key is pressed
+            setMovingBackward(false); // Start moving when key is pressed
+            dispatch(setIsMovingBackward(false));
         }
-
     };
 
     // Add event listener for key presses
@@ -145,7 +155,7 @@ function Robot({ready, setBackgroundPosition, setDistantBackgroundPosition, setC
     }, [jump]);
 
     return (
-        <div style={{ outline: 'none', position: 'relative', height: '100vh', overflow: 'hidden', zIndex: 5 }}
+        <div style={{ outline: 'none', position: 'relative', height: '100vh', overflow: 'hidden', zIndex: 999 }}
             tabIndex={0} // A div is not focusable by default and this makes div focusable
             ref={containerRef}
         >

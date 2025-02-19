@@ -7,6 +7,8 @@ import Iris from "./components/Iris"; // Import Iris
 import Robot from "./components/Robot";
 import TextBubble from "./components/TextBubble";
 import BackgroundWrapper from "./components/BackgroundWrapper";
+import { Provider } from "react-redux";
+import { store } from "../redux/store";
 
 export default function Home() {
   const [play] = useSound('/LatinHouseBed.mp3');
