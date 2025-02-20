@@ -7,8 +7,7 @@ import Iris from "./components/Iris"; // Import Iris
 import Robot from "./components/Robot";
 import TextBubble from "./components/TextBubble";
 import BackgroundWrapper from "./components/BackgroundWrapper";
-import { Provider } from "react-redux";
-import { store } from "../redux/store";
+import Link from "next/link";
 
 export default function Home() {
   const [play] = useSound('/LatinHouseBed.mp3');
@@ -38,6 +37,9 @@ export default function Home() {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden">
+      <Link href="/resume" style={{position: 'absolute', zIndex: 99999}}>
+        <button className="start-button">Go to Resume</button>
+      </Link>
       <BackgroundWrapper 
         position={backgroundPosition} 
         cloudPace={cloudPosition} 
