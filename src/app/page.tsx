@@ -43,6 +43,7 @@ export default function Home() {
         cloudPace={cloudPosition} 
         distantPosition={distantBackgroundPosition} 
         setCloudPosition={setCloudPosition}
+        startActive={onStart}
       />
 
       {onStart && (

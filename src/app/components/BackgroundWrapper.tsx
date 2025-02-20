@@ -7,9 +7,10 @@ interface BackgroundProps {
   distantPosition: number;
   cloudPace: number;
   setCloudPosition: Dispatch<SetStateAction<number>>;
+  startActive: boolean;
 }
 
-export default function BackgroundWrapper({ position, distantPosition, cloudPace, setCloudPosition }: BackgroundProps) {
+export default function BackgroundWrapper({ position, distantPosition, cloudPace, setCloudPosition, startActive }: BackgroundProps) {
   const [initialPosition, setInitialPosition] = useState(200);
   const [sunActive, setSunActive] = useState(true);
   const isMovingBackward = useSelector((state: RootState) => state.app.isMovingBackward);
@@ -109,7 +110,6 @@ export default function BackgroundWrapper({ position, distantPosition, cloudPace
 
   return (
     <>
-      {/* Sky (Lowest layer) */}
       <div
         className="absolute inset-0 w-full h-full"
         style={{
@@ -126,7 +126,7 @@ export default function BackgroundWrapper({ position, distantPosition, cloudPace
         className="absolute inset-0 w-full h-full"
         style={{
           zIndex: 4, 
-          backgroundColor: `rgba(0, 0, 0, ${1-backgroundOpacityRef.current})`,
+          backgroundColor: `rgba(0, 0, 0, ${startActive ? 0 : 1-backgroundOpacityRef.current})`,
           pointerEvents: "none",
         }}
       />
@@ -145,12 +145,11 @@ export default function BackgroundWrapper({ position, distantPosition, cloudPace
           className="absolute w-[100px] h-[100px]" 
           style={{ 
             top: `${sunY}px`,
-            right: `${-sunX}px`, // ✅ Sun now **starts off-screen right** and exits left
+            right: `${-sunX}px`,
           }} 
         />
       </div>
 
-      {/* Mountains (Correct Brightness Inversion) */}
       <div
         className="absolute inset-0 w-full h-full"
         style={{
@@ -159,11 +158,10 @@ export default function BackgroundWrapper({ position, distantPosition, cloudPace
           backgroundRepeat: "repeat-x",
           backgroundPosition: `${distantPosition}px bottom`,
           zIndex: 6, 
-          filter: `brightness(${mountainBrightnessRef.current})`,
+          filter: !startActive ? `brightness(${mountainBrightnessRef.current})` : 'none',
         }}
       />
 
-      {/* Clouds (Correct Brightness Inversion, Wraps Correctly) */}
       <img 
         src="/images/background/cloud.png" 
         alt="Cloud" 
@@ -172,15 +170,13 @@ export default function BackgroundWrapper({ position, distantPosition, cloudPace
           position: "absolute",
           width: "150px", 
           height: "50px", 
-          filter: `brightness(${cloudBrightnessRef.current})`,
-          zIndex: 8, 
+          filter: !startActive ? `brightness(${cloudBrightnessRef.current})` : "none",          zIndex: 8, 
           right: `${initialPosition - cloudPace}px`,
           transform: "scaleX(-1)",
           top: "200px",
         }} 
       />
 
-      {/* Background SVG (Topmost, should not be affected by overlay) */}
       <div
         className="absolute inset-0 w-full h-full"
         style={{
