@@ -23,18 +23,17 @@ export default function BackgroundWrapper({ position, distantPosition, cloudPace
   const screenWidth = typeof window !== "undefined" ? window.innerWidth : 1920;
   const screenHeight = typeof window !== "undefined" ? window.innerHeight : 1080;
 
-  const sunWidth = 150; // Adjust this to match the actual width of the sun image
-  const sunStartOffset = sunWidth * 1.5; // Extra offset to ensure it starts off-screen
-  // Ensures the sun starts off screen
-  const sunX = (((distantPosition + screenWidth + sunStartOffset) % (screenWidth + sunStartOffset * 2)) + sunStartOffset);
-
-  // Parabolic arc for sun/moon movement
-  const h = (screenWidth / 2); // Midpoint of screen
-  const startY = (screenHeight * .6); // Sun starts/ends here
-  const peakY = 0; // Top of arc
+  const sunWidth = 150; // Sun/Moon width
+  const sunStartOffset = sunWidth * 0.75; // ✅ Reduce offset to ensure faster entry
+  const sunX = (((distantPosition % (screenWidth + sunStartOffset * 2)) - sunStartOffset) + screenWidth / 3);
+  
+  const h = (screenWidth / 2.2); // ✅ Moves arc just enough to stay centered but enter faster
+  const startY = screenHeight * 0.6;
+  const peakY = 0;
   const a = (startY - peakY) / Math.pow(h, 2);
-  let sunY = a * Math.pow(-sunX - h, 2) + peakY;
-  sunY = Math.min(Math.max(sunY, -startY), startY); // Clamp sunY
+  
+  let sunY = a * Math.pow(sunX + h, 2) + peakY;
+  sunY = Math.min(Math.max(sunY, -startY), startY);  
 
   const lastBrightnessRef = useRef(0.6); // Stores last brightness level when switching
 
