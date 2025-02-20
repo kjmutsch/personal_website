@@ -31,12 +31,12 @@ function Robot({ready, setBackgroundPosition, setDistantBackgroundPosition, setC
     const startMovement = (forwards: boolean) => {
         if (!movementInterval.current) {
             movementInterval.current = window.setInterval(() => {
-                const moveSpeed = 10;
+                const moveSpeed = 5;
                 const parallaxSpeed = .5;
+                const sunSpeed = moveSpeed/2;
                 setIsRotating(true);
-                setBackgroundPosition((prev) => prev - (forwards ? moveSpeed / 2 : -(moveSpeed/2)));
-                setDistantBackgroundPosition((prev) => prev - (forwards ? moveSpeed: -(moveSpeed)));
-
+                setBackgroundPosition((prev) => prev - (forwards ? moveSpeed : -(moveSpeed)));
+                setDistantBackgroundPosition((prev) => prev - (forwards ? sunSpeed: -(sunSpeed)));
                 // setDistantBackgroundPosition((prev) => prev - (forwards ? parallaxSpeed : -(parallaxSpeed)));
                 setCloudPosition((prev) => prev - (forwards ? parallaxSpeed : -(parallaxSpeed)));
             }, 20); // Update position every 30ms

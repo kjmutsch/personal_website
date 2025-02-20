@@ -22,21 +22,20 @@ export default function BackgroundWrapper({ position, distantPosition, cloudPace
 
   const screenWidth = typeof window !== "undefined" ? window.innerWidth : 1920;
   const screenHeight = typeof window !== "undefined" ? window.innerHeight : 1080;
-  console.log(screenHeight, screenHeight/2)
-  const sunWidth = 250; // Adjust this to match the actual width of the sun image
+
+  const sunWidth = 150; // Adjust this to match the actual width of the sun image
   const sunStartOffset = sunWidth * 1.5; // Extra offset to ensure it starts off-screen
   // Ensures the sun starts off screen
   const sunX = (((distantPosition + screenWidth + sunStartOffset) % (screenWidth + sunStartOffset * 2)) + sunStartOffset);
 
   // Parabolic arc for sun/moon movement
   const h = (screenWidth / 2); // Midpoint of screen
-  const startY = (screenHeight * .7); // Sun starts/ends here in the lower third of the screen
+  const startY = (screenHeight * .6); // Sun starts/ends here
   const peakY = 0; // Top of arc
   const a = (startY - peakY) / Math.pow(h, 2);
   let sunY = a * Math.pow(-sunX - h, 2) + peakY;
   sunY = Math.min(Math.max(sunY, -startY), startY); // Clamp sunY
 
-  console.log(sunX, sunY, peakY, startY, a, h)
   const lastBrightnessRef = useRef(0.6); // Stores last brightness level when switching
 
   useEffect(() => {
