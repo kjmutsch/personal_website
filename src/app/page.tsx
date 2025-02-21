@@ -1,8 +1,8 @@
 "use client"; // This is a client component 👈🏽
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Start from "./components/Start";
 import AudioPlayer from "./components/AudioPlayer";
-import useSound from 'use-sound';
+import useSound from "use-sound";
 import Iris from "./components/Iris"; // Import Iris
 import Robot from "./components/Robot";
 import TextBubble from "./components/TextBubble";
@@ -13,7 +13,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/redux/store";
 
 export default function Home() {
-  const [play] = useSound('/LatinHouseBed.mp3');
+  const [play] = useSound("/LatinHouseBed.mp3");
   const [onStart, setOnStart] = useState(true); // Show the Start button initially
   const [showIris, setShowIris] = useState(false); // Trigger iris animation
   const [showBackground, setShowBackground] = useState(false); // Show background after animation
@@ -29,7 +29,7 @@ export default function Home() {
     setShowIris(true); // Trigger iris animation
 
     // After 1.8 seconds, hide Start and show just Background
-    const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+    const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
     await delay(1800);
 
     setShowBackground(true);
@@ -41,56 +41,83 @@ export default function Home() {
   };
 
   // Create coin pattern
-  const coinRate = 5000; // every 500px
-  const coinYOffset = [0, -50, -100] // place the coins in different spots on y axis
+  const coinRate = 500; // every 500px
+  const coinYOffset = [0, -50, -100]; // place the coins in different spots on y axis
   const [coins, setCoins] = useState<{ x: number; y: number; id: number }[]>([]);
-  
-  // Calculate the visible coins based on robot position
-  const numCoins = 10; // preload a few extra than will be on screen
-  useEffect(() => {
-    if (!isMovingBackward) {
-      setCoins((prevCoins) => {
-        const newCoins = Array.from({ length: numCoins }, (_, i) => {
-          const xPosition = backgroundPosition + (i * coinRate);
-          return { x: xPosition, y: coinYOffset[i % coinYOffset.length], id: xPosition };
-        }).filter((coin) => !prevCoins.some((c) => c.id === coin.id));
+  const screenWidth = typeof window !== "undefined" ? window.innerWidth : 1920;
 
-        return [...prevCoins, ...newCoins];
+  // Calculate the visible coins based on robot position
+  const lastGeneratedSegment = useRef(Math.floor(-backgroundPosition / coinRate)); // track last segment where coin was generated
+  const lastCoinIndex = useRef(0); // track last used height index for cycling
+
+  // console.log("Background Position:", backgroundPosition);
+  // console.log("Last Segment:", lastGeneratedSegment.current, "Next Segment:", lastGeneratedSegment.current * coinRate + coinRate);
+
+  useEffect(() => {
+    const currentSegment = Math.floor(-backgroundPosition / coinRate);
+  
+    //console.log("Checking Coin Spawn - Current Segment:", currentSegment, "Last Generated:", lastGeneratedSegment.current);
+  
+    if (!isMovingBackward && currentSegment > lastGeneratedSegment.current) {
+      lastGeneratedSegment.current = currentSegment; // ✅ Update last segment
+  
+      // Cycle coin height properly
+      const nextHeightIndex = lastCoinIndex.current % coinYOffset.length;
+      lastCoinIndex.current++;
+  
+      setCoins((prevCoins) => {
+        const filteredCoins = prevCoins.filter((coin) => coin.x > -backgroundPosition - screenWidth * 1.5);
+  
+        const newCoin = {
+          x: -backgroundPosition + screenWidth, // ✅ FIX: Coin position remains fixed
+          y: coinYOffset[nextHeightIndex],
+          id: currentSegment, // Unique ID based on segment
+        };
+  
+        console.log("🪙 New Coin Added:", newCoin);
+        return [...filteredCoins, newCoin];
       });
     }
   }, [backgroundPosition, isMovingBackward]);
-
+  
   const handleCollectCoin = (coinId: number) => {
     setCoins((prevCoins) => prevCoins.filter((coin) => coin.id !== coinId)); // Remove collected coin
   };
 
+  console.log(coins)
+
   return (
     <div className="relative h-screen w-screen overflow-hidden">
-      <Link href="/resume" style={{position: 'absolute', zIndex: 99999}}>
+      <Link href="/resume" style={{ position: "absolute", zIndex: 99999 }}>
         <button className="start-button">Go to Resume</button>
       </Link>
-      <BackgroundWrapper 
-        position={backgroundPosition} 
-        cloudPace={cloudPosition} 
-        distantPosition={distantBackgroundPosition} 
+
+      <BackgroundWrapper
+        position={backgroundPosition}
+        cloudPace={cloudPosition}
+        distantPosition={distantBackgroundPosition}
         setCloudPosition={setCloudPosition}
         startActive={onStart}
       />
 
       {/* Coins */}
-      {/* {coins.map((coin) => (
-        <Coin key={coin.id} x={coin.x - backgroundPosition} y={coin.y} onCollect={() => handleCollectCoin(coin.id)} />
-      ))} */}
+      {coins.map((coin) => {
+        // must be in return to properly return even if .map object is undefined or modified
+  return (
+    <Coin key={coin.id} backgroundPosition={backgroundPosition} x={coin.x} y={coin.y} onCollect={() => handleCollectCoin(coin.id)} />
+  );
+})}
+
 
       {onStart && (
-        <div 
+        <div
           className="absolute inset-0 w-full h-full bg-black bg-opacity-10 backdrop-blur-sm transition-opacity duration-500"
           style={{ zIndex: 99 }}
         />
       )}
 
       {onStart && (
-        <div 
+        <div
           className="absolute w-full h-full flex justify-center items-center"
           style={{ zIndex: 9999, pointerEvents: "auto" }}
         >
@@ -103,23 +130,19 @@ export default function Home() {
       {showBackground && (
         <div>
           <TextBubble ready={ready} />
-          <Robot 
-            ready={ready} 
-            setBackgroundPosition={setBackgroundPosition} 
-            setCloudPosition={setCloudPosition} 
-            setDistantBackgroundPosition={setDistantBackgroundPosition} 
+          <Robot
+            ready={ready}
+            setBackgroundPosition={setBackgroundPosition}
+            setCloudPosition={setCloudPosition}
+            setDistantBackgroundPosition={setDistantBackgroundPosition}
           />
         </div>
       )}
 
       <Iris trigger={showIris} />
 
-      <div style={{ display: 'none' }}>
-        <AudioPlayer
-          onFinish={() => {}}
-          play={true}
-          src="/LatinHouseBed.mp3"
-        />
+      <div style={{ display: "none" }}>
+        <AudioPlayer onFinish={() => {}} play={true} src="/LatinHouseBed.mp3" />
       </div>
     </div>
   );
