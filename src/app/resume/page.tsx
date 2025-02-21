@@ -29,10 +29,7 @@ export default function Resume() {
     return (
         <div className="min-h-screen bg-gradient-to-b from-[#a8d8f0] to-[#2a485c] text-[#e5b76d] overflow-auto p-0 m-0 relative">
             <section className="flex flex-col justify-center items-center h-screen bg-[#5a8eaa] relative">
-                <motion.div 
-                    initial={{ opacity: 0, y: -50 }} 
-                    animate={{ opacity: 1, y: 0 }} 
-                    transition={{ duration: 1 }}
+                <div 
                     className="text-center relative">
                     <div className="relative p-4 border-8 border-dotted border-[#fad37b] rounded-full">
                         <Image 
@@ -45,7 +42,7 @@ export default function Resume() {
                     </div>
                     <h2 className="text-2xl font-bold mt-5">About Me</h2>
                     <p>Short bio goes here...</p>
-                </motion.div>
+                </div>
                 
                 {/* Decorative Doodles Around About Me Section */}
                 <div className="absolute top-10 left-5 text-white text-6xl">★</div>

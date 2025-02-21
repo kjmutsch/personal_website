@@ -1,5 +1,5 @@
 "use client"; // This is a client component 👈🏽
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Start from "./components/Start";
 import AudioPlayer from "./components/AudioPlayer";
 import useSound from 'use-sound';
@@ -8,6 +8,9 @@ import Robot from "./components/Robot";
 import TextBubble from "./components/TextBubble";
 import BackgroundWrapper from "./components/BackgroundWrapper";
 import Link from "next/link";
+import Coin from "./components/Coin";
+import { useSelector } from "react-redux";
+import { RootState } from "@/redux/store";
 
 export default function Home() {
   const [play] = useSound('/LatinHouseBed.mp3');
@@ -18,6 +21,8 @@ export default function Home() {
   const [distantBackgroundPosition, setDistantBackgroundPosition] = useState(0);
   const [cloudPosition, setCloudPosition] = useState(0);
   const [ready, setReady] = useState(false);
+
+  const isMovingBackward = useSelector((state: RootState) => state.app.isMovingBackward);
 
   const handleStart = async () => {
     play();
@@ -35,6 +40,30 @@ export default function Home() {
     setReady(true);
   };
 
+  // Create coin pattern
+  const coinRate = 5000; // every 500px
+  const coinYOffset = [0, -50, -100] // place the coins in different spots on y axis
+  const [coins, setCoins] = useState<{ x: number; y: number; id: number }[]>([]);
+  
+  // Calculate the visible coins based on robot position
+  const numCoins = 10; // preload a few extra than will be on screen
+  useEffect(() => {
+    if (!isMovingBackward) {
+      setCoins((prevCoins) => {
+        const newCoins = Array.from({ length: numCoins }, (_, i) => {
+          const xPosition = backgroundPosition + (i * coinRate);
+          return { x: xPosition, y: coinYOffset[i % coinYOffset.length], id: xPosition };
+        }).filter((coin) => !prevCoins.some((c) => c.id === coin.id));
+
+        return [...prevCoins, ...newCoins];
+      });
+    }
+  }, [backgroundPosition, isMovingBackward]);
+
+  const handleCollectCoin = (coinId: number) => {
+    setCoins((prevCoins) => prevCoins.filter((coin) => coin.id !== coinId)); // Remove collected coin
+  };
+
   return (
     <div className="relative h-screen w-screen overflow-hidden">
       <Link href="/resume" style={{position: 'absolute', zIndex: 99999}}>
@@ -47,6 +76,11 @@ export default function Home() {
         setCloudPosition={setCloudPosition}
         startActive={onStart}
       />
+
+      {/* Coins */}
+      {/* {coins.map((coin) => (
+        <Coin key={coin.id} x={coin.x - backgroundPosition} y={coin.y} onCollect={() => handleCollectCoin(coin.id)} />
+      ))} */}
 
       {onStart && (
         <div 

@@ -192,10 +192,10 @@ function Robot({ready, setBackgroundPosition, setDistantBackgroundPosition, setC
                         src="images/robot/robot_left.png"
                         className="left-arm"
                         animate={isRotating ? { rotate: [10, -10, 10] } : { rotate: 0 }}
-                        transition={{
-                            duration: 0.5, // Duration of each swing
-                            repeatType: "mirror", // Mirror the animation to swing back and forth
-                        }}
+                        // transition={{
+                        //     duration: 0.5, // Duration of each swing
+                        //     repeatType: "mirror", // Mirror the animation to swing back and forth
+                        // }}
                         style={{ position: 'absolute', top: '45px', left: '-3px' }}
                     />
 
@@ -204,10 +204,10 @@ function Robot({ready, setBackgroundPosition, setDistantBackgroundPosition, setC
                         src="images/robot/robot_right.png"
                         className="right-arm"
                         animate={isRotating ? { rotate: [-10, 10, -10] } : { rotate: 0 }}
-                        transition={{
-                            duration: 0.5,
-                            repeatType: "mirror",
-                        }}
+                        // transition={{
+                        //     duration: 0.5,
+                        //     repeatType: "mirror",
+                        // }}
                         style={{ position: 'absolute', top: '45px', left: '72px' }}
                     />
 
