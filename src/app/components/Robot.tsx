@@ -2,7 +2,7 @@
 import React, { Dispatch, SetStateAction, useEffect, useRef, useState } from 'react';
 import { animate, motion, useMotionValue } from 'framer-motion';
 import { useAppDispatch } from "../../redux/store";
-import { setIsMovingBackward, setIsMovingForwards } from "../../redux/appSlice";
+import { setIsJumping, setIsMovingBackward, setIsMovingForwards } from "../../redux/appSlice";
 
 interface RobotProps {
     ready: boolean;
@@ -11,224 +11,203 @@ interface RobotProps {
     setCloudPosition: Dispatch<SetStateAction<number>>;
 }
 
-function Robot({ready, setBackgroundPosition, setDistantBackgroundPosition, setCloudPosition}: RobotProps) {
+function Robot({ ready, setBackgroundPosition, setDistantBackgroundPosition, setCloudPosition }: RobotProps) {
     const dispatch = useAppDispatch();
-    const [introduction, setIntroduction] = useState(true); // If we're introducing Bitly we run a different animation
+    const [introduction, setIntroduction] = useState(true);
     const [isMovingForward, setMovingForward] = useState(false);
-    const [isMovingBackward, setMovingBackward] = useState(false); // Track if Bitly is moving
-    const [isRotating, setIsRotating] = useState(false); // Tires rotating or not
-    const [jump, setJump] = useState(false); // Bitly currently jumping
-    const jumpRef = useRef(false)
-    const [lastMovement, setLastMovement] = useState<string | null>(null); // saving last movement so I know what direction to animate tires
+    const [isMovingBackward, setMovingBackward] = useState(false);
+    const [jump, setJump] = useState(false);
+    const jumpRef = useRef(false);
+    const lastMovement = useRef<string | null>(null);
 
-    const rotationValue = useMotionValue(0);    
+    const rotationValue = useMotionValue(0);
     const containerRef = useRef<HTMLDivElement | null>(null);
-    const movementInterval = useRef<number | null>(null); // Store interval ID for movement
     const groundYPosition = 55;
     const jumpHeight = -20;
-  
-    // Function to start movement when key is held down
-    const startMovement = (forwards: boolean) => {
-        if (!movementInterval.current) {
-            movementInterval.current = window.setInterval(() => {
-                const moveSpeed = 5;
-                const parallaxSpeed = .5;
-                const sunSpeed = moveSpeed/2;
-                setIsRotating(true);
-                setBackgroundPosition((prev) => prev - (forwards ? moveSpeed : -(moveSpeed)));
-                setDistantBackgroundPosition((prev) => prev - (forwards ? sunSpeed: -(sunSpeed)));
-                // setDistantBackgroundPosition((prev) => prev - (forwards ? parallaxSpeed : -(parallaxSpeed)));
-                setCloudPosition((prev) => prev - (forwards ? parallaxSpeed : -(parallaxSpeed)));
-            }, 20); // Update position every 30ms
+
+    const backgroundPositionRef = useRef(0);
+    const distantPositionRef = useRef(0);
+    const cloudPositionRef = useRef(0);
+    const frameRef = useRef<number | null>(null);
+    const lastTimestampRef = useRef<number | null>(null);
+
+    const moveSpeed = 8;
+    const parallaxSpeed = 10;
+    const sunSpeed = moveSpeed / 1.5;
+
+    // **Smooth movement using requestAnimationFrame**
+    const moveRobot = (timestamp: number) => {
+        if (!lastTimestampRef.current) lastTimestampRef.current = timestamp;
+        const deltaTime = (timestamp - lastTimestampRef.current) / 16.67; // Normalize to 60 FPS
+        lastTimestampRef.current = timestamp;
+
+        if (isMovingForward || isMovingBackward) {
+            const direction = isMovingForward ? -1 : 1;
+
+            // Consistent movement speed across frame rates
+            backgroundPositionRef.current += moveSpeed * direction * deltaTime;
+            distantPositionRef.current += sunSpeed * direction * deltaTime;
+            cloudPositionRef.current += parallaxSpeed * direction * deltaTime;
+
+            setBackgroundPosition(backgroundPositionRef.current);
+            setDistantBackgroundPosition(distantPositionRef.current);
+            setCloudPosition(cloudPositionRef.current);
+
+            frameRef.current = requestAnimationFrame(moveRobot);
         }
     };
 
-    // Function to stop movement when key is released
-    const stopMovement = () => {
-        if (movementInterval.current) {
-            setIsRotating(false);
-            clearInterval(movementInterval.current); // Clear the interval
-            movementInterval.current = null;
-        }
-    };
-
-    // Handle keydown events
-    const handleKeyDown = (event: KeyboardEvent) => {
-        if (event.key === " " && introduction && !jumpRef.current) {
-            setJump(true);
-            jumpRef.current = true;
-            setIntroduction(false);
-        } else if(event.key === " " && !jumpRef.current) {
-            setJump(true); // Trigger jump
-            jumpRef.current = true;
-        } 
-
-        if ((event.key === 'ArrowRight' || event.key === 'd') && !introduction) {
-            setMovingForward(true); // Start moving when key is pressed
-            dispatch(setIsMovingBackward(false));
-            dispatch(setIsMovingForwards(true));
-            setLastMovement('ArrowRight')
-        }
-        if ((event.key === 'ArrowLeft' || event.key === 'a') && !introduction) {
-            setMovingBackward(true); // Start moving when key is pressed
-            dispatch(setIsMovingBackward(true));
-            dispatch(setIsMovingForwards(false));
-            setLastMovement('ArrowLeft')
-        }
-    };
-
-    // Handle keyup events to stop motion
-    const handleKeyUp = (event: KeyboardEvent) => {
-        if (event.key === 'ArrowRight' || event.key === 'd') {
-            setMovingForward(false); // Stop the motion on key up
-            dispatch(setIsMovingForwards(false));
-        } else if ((event.key === 'ArrowLeft' || event.key === 'a')) {
-            setMovingBackward(false); // Start moving when key is pressed
-            dispatch(setIsMovingBackward(false));
-        }
-    };
-
-    // Add event listener for key presses
     useEffect(() => {
-        if (typeof window !== 'undefined') {
-            const container = containerRef.current;
-            if (container) {
-                container.focus();
-                window.addEventListener('keydown', handleKeyDown);
-                window.addEventListener('keyup', handleKeyUp);
-            }
-
-            // Cleanup the event listener when the component unmounts
-            return () => {
-                window.removeEventListener('keydown', handleKeyDown);
-                window.removeEventListener('keyup', handleKeyUp);
-            };
+        if (isMovingForward || isMovingBackward) {
+            frameRef.current = requestAnimationFrame(moveRobot);
+        } else if (frameRef.current) {
+            cancelAnimationFrame(frameRef.current);
+            lastTimestampRef.current = null;
         }
-    }, [introduction]);
-
-    // Use effect to start and stop the continuous movement
-    useEffect(() => {
-        if (isMovingForward) {
-            startMovement(true);
-        } else if (isMovingBackward) {
-            startMovement(false);
-        } else {
-            stopMovement();
-        }
-
-        // Clean up the interval when the component unmounts
         return () => {
-            stopMovement();
+            if (frameRef.current) cancelAnimationFrame(frameRef.current);
         };
     }, [isMovingForward, isMovingBackward]);
 
+    // **Handle Wheel Rotation**
     useEffect(() => {
-        const rotVal = isMovingBackward || lastMovement === 'ArrowLeft' ? -360 : 360;
-        if (isRotating) {
-            animate(rotationValue, rotationValue.get() + rotVal, {
+        if (isMovingForward || isMovingBackward) {
+            const direction = isMovingBackward ? -1 : 1; // Reverse when moving backward
+
+            animate(rotationValue, rotationValue.get() + 360 * direction, {
                 duration: 1,
                 ease: 'linear',
-                onUpdate: (latest) => {
-                    rotationValue.set(latest % rotVal); // Normalize the rotation between 0 and 360
-                },
-                repeat: Infinity
+                repeat: Infinity,
             });
         } else {
-            // stopping, allow for a couple more rotations
-            animate(rotationValue, rotationValue.get() + rotVal, {
-                duration: 1,
-                ease: 'easeOut', // Ease out smoothly
-            });
+            // Stop rotation smoothly when movement stops
+            animate(rotationValue, rotationValue.get(), { duration: 0.3, ease: 'easeOut' });
         }
-    }, [isRotating, rotationValue, isMovingForward, isMovingBackward]);
+    }, [isMovingForward, isMovingBackward]);
 
-    // Manage jump effect
+    // **Handle Key Presses**
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === " " && introduction && !jumpRef.current) {
+                setJump(true);
+                jumpRef.current = true;
+                dispatch(setIsJumping(true));
+                setIntroduction(false);
+            } else if (event.key === " " && !jumpRef.current) {
+                setJump(true);
+                jumpRef.current = true;
+                dispatch(setIsJumping(true));
+            }
+
+            if ((event.key === 'ArrowRight' || event.key === 'd') && !introduction) {
+                setMovingForward(true);
+                dispatch(setIsMovingBackward(false));
+                dispatch(setIsMovingForwards(true));
+                lastMovement.current = 'ArrowRight';
+            }
+            if ((event.key === 'ArrowLeft' || event.key === 'a') && !introduction) {
+                setMovingBackward(true);
+                dispatch(setIsMovingBackward(true));
+                dispatch(setIsMovingForwards(false));
+                lastMovement.current = 'ArrowLeft';
+            }
+        };
+
+        const handleKeyUp = (event: KeyboardEvent) => {
+            if (event.key === 'ArrowRight' || event.key === 'd') {
+                setMovingForward(false);
+                dispatch(setIsMovingForwards(false));
+            } else if ((event.key === 'ArrowLeft' || event.key === 'a')) {
+                setMovingBackward(false);
+                dispatch(setIsMovingBackward(false));
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
+
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener('keyup', handleKeyUp);
+        };
+    }, [introduction]);
+
+    // **Manage Jump Effect (with setIsJumping)**
     useEffect(() => {
         if (jump) {
-            const jumpDuration = 500;
-            const jumpAnimation = setTimeout(() => {
-                setJump(false); // Reset jump
+            setTimeout(() => {
+                setJump(false);
                 jumpRef.current = false;
-            }, jumpDuration);
-            return () => clearTimeout(jumpAnimation);
+                dispatch(setIsJumping(false)); // ✅ Reset isJumping when landing
+            }, 500);
         }
     }, [jump]);
 
     return (
-        <div style={{ outline: 'none', position: 'relative', height: '100vh', overflow: 'hidden', zIndex: 999 }}
-            tabIndex={0} // A div is not focusable by default and this makes div focusable
+        <div
+            style={{ outline: 'none', position: 'relative', height: '100vh', overflow: 'hidden', zIndex: 999 }}
+            tabIndex={0}
             ref={containerRef}
         >
-        {ready && (
-            <motion.div
-                className="bitly"
-                initial={{ x: '-50vw' }}
-                animate={{ x: 100 }} // Move on the x-axis
-                transition={{
-                    type: 'spring',
-                    stiffness: 50,
-                    damping: 15, // bounce
-                    duration: introduction ? 1.5 : 0.5
-                }}
-                style={{ position: "absolute"}}
-            >
-                {/* Bitly's body will jump by altering the y-axis here */}
+            {ready && (
                 <motion.div
-                    animate={{
-                        y: jump ? [groundYPosition, jumpHeight, groundYPosition] : groundYPosition // Handle jump on y-axis
-                    }}
+                    className="bitly"
+                    initial={{ x: '-50vw' }}
+                    animate={{ x: 100 }}
                     transition={{
-                        duration: 0.5, // Jump duration
-                        ease: 'easeInOut',
+                        type: 'spring',
+                        stiffness: 50,
+                        damping: 15,
+                        duration: introduction ? 1.5 : 0.5,
                     }}
+                    style={{ position: "absolute" }}
                 >
-                    {/* Robot's body */}
-                    <div className="body" >
-                        <img src="/images/robot/body.png" alt="Body"/>
-                    </div>
+                    <motion.div
+                        animate={{
+                            y: jump ? [groundYPosition, jumpHeight, groundYPosition] : groundYPosition,
+                        }}
+                        transition={{
+                            duration: 0.5,
+                            ease: 'easeInOut',
+                        }}
+                    >
+                        {/* Robot's body */}
+                        <div className="body">
+                            <img src="/images/robot/body.png" alt="Body" />
+                        </div>
 
-                    {/* Left Arm */}
-                    <motion.img
-                        src="images/robot/robot_left.png"
-                        className="left-arm"
-                        animate={isRotating ? { rotate: [10, -10, 10] } : { rotate: 0 }}
-                        // transition={{
-                        //     duration: 0.5, // Duration of each swing
-                        //     repeatType: "mirror", // Mirror the animation to swing back and forth
-                        // }}
-                        style={{ position: 'absolute', top: '45px', left: '-3px' }}
-                    />
+                        {/* Left Arm */}
+                        <img
+                            src="images/robot/robot_left.png"
+                            className="left-arm"
+                            style={{ position: 'absolute', top: '45px', left: '-3px' }}
+                        />
 
-                    {/* Right Arm */}
-                    <motion.img
-                        src="images/robot/robot_right.png"
-                        className="right-arm"
-                        animate={isRotating ? { rotate: [-10, 10, -10] } : { rotate: 0 }}
-                        // transition={{
-                        //     duration: 0.5,
-                        //     repeatType: "mirror",
-                        // }}
-                        style={{ position: 'absolute', top: '45px', left: '72px' }}
-                    />
+                        {/* Right Arm */}
+                        <img
+                            src="images/robot/robot_right.png"
+                            className="right-arm"
+                            style={{ position: 'absolute', top: '45px', left: '72px' }}
+                        />
 
-                    {/* Left Wheel */}
-                    <motion.img
-                    src="images/robot/robot_wheel.png"
-                        className="left-wheel"
-                        style={{ position: 'absolute', top: '85px', left: '20px', rotate: rotationValue }}
-                    />
+                        {/* Left Wheel */}
+                        <motion.img
+                            src="images/robot/robot_wheel.png"
+                            className="left-wheel"
+                            style={{ position: 'absolute', top: '85px', left: '20px', rotate: rotationValue }}
+                        />
 
-                    {/* Right Wheel */}
-                    <motion.img
-                        src="images/robot/robot_wheel.png"
-                        className="right-wheel"
-                        style={{ position: 'absolute', top: '85px', left: '50px', rotate: rotationValue }}
-                    />
+                        {/* Right Wheel */}
+                        <motion.img
+                            src="images/robot/robot_wheel.png"
+                            className="right-wheel"
+                            style={{ position: 'absolute', top: '85px', left: '50px', rotate: rotationValue }}
+                        />
+                    </motion.div>
                 </motion.div>
-            </motion.div>
-        )}
-    </div>
-  );
+            )}
+        </div>
+    );
 }
 
 export default Robot;

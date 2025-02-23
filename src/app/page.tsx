@@ -54,12 +54,12 @@ export default function Home() {
   // console.log("Last Segment:", lastGeneratedSegment.current, "Next Segment:", lastGeneratedSegment.current * coinRate + coinRate);
 
   useEffect(() => {
-    const currentSegment = Math.floor(-backgroundPosition / coinRate);
+    const currentSegment = Math.floor(backgroundPosition / -coinRate);
   
     //console.log("Checking Coin Spawn - Current Segment:", currentSegment, "Last Generated:", lastGeneratedSegment.current);
   
     if (!isMovingBackward && currentSegment > lastGeneratedSegment.current) {
-      lastGeneratedSegment.current = currentSegment; // ✅ Update last segment
+      lastGeneratedSegment.current = currentSegment;
   
       // Cycle coin height properly
       const nextHeightIndex = lastCoinIndex.current % coinYOffset.length;
@@ -69,12 +69,11 @@ export default function Home() {
         const filteredCoins = prevCoins.filter((coin) => coin.x > -backgroundPosition - screenWidth * 1.5);
   
         const newCoin = {
-          x: -backgroundPosition + screenWidth, // ✅ FIX: Coin position remains fixed
+          x: -backgroundPosition + screenWidth,
           y: coinYOffset[nextHeightIndex],
           id: currentSegment, // Unique ID based on segment
         };
   
-        console.log("🪙 New Coin Added:", newCoin);
         return [...filteredCoins, newCoin];
       });
     }
@@ -88,25 +87,23 @@ export default function Home() {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden">
-      <Link href="/resume" style={{ position: "absolute", zIndex: 99999 }}>
+      {/* <Link href="/resume" style={{ position: "absolute", zIndex: 99999 }}>
         <button className="start-button">Go to Resume</button>
-      </Link>
+      </Link> */}
 
       <BackgroundWrapper
         position={backgroundPosition}
         cloudPace={cloudPosition}
         distantPosition={distantBackgroundPosition}
-        setCloudPosition={setCloudPosition}
         startActive={onStart}
       />
 
       {/* Coins */}
-      {coins.map((coin) => {
-        // must be in return to properly return even if .map object is undefined or modified
-  return (
-    <Coin key={coin.id} backgroundPosition={backgroundPosition} x={coin.x} y={coin.y} onCollect={() => handleCollectCoin(coin.id)} />
-  );
-})}
+      {coins
+      .filter((coin) => coin.x + backgroundPosition > -100 && coin.x + backgroundPosition < screenWidth + 100) // ✅ Only render visible coins
+      .map((coin) => (
+        <Coin key={coin.id} id={coin.id} backgroundPosition={backgroundPosition} x={coin.x} y={coin.y} onCollect={() => handleCollectCoin(coin.id)} />
+      ))}
 
 
       {onStart && (
