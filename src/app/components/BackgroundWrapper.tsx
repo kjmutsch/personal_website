@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "../../redux/store";
 
@@ -9,34 +9,43 @@ interface BackgroundProps {
   cloudPace: number;
 }
 
-export default function BackgroundWrapper({ position, distantPosition, startActive, cloudPace }: BackgroundProps) {
+export default function BackgroundWrapper({ position, distantPosition, startActive }: BackgroundProps) {
   const [sunActive, setSunActive] = useState(true);
   const isMovingBackward = useSelector((state: RootState) => state.app.isMovingBackward);
   const isMovingForwards = useSelector((state: RootState) => state.app.isMovingForwards);
 
+  // useRef values (don't trigger re-renders)
   const backgroundOpacityRef = useRef(0.7);
   const mountainBrightnessRef = useRef(1);
   const cloudBrightnessRef = useRef(1);
   const cloudPositionsRef = useRef<{ x: number; y: number; size: number; flip: boolean }[]>([]);
-
-  const screenWidth = typeof window !== "undefined" ? window.innerWidth : 1920;
-  const screenHeight = typeof window !== "undefined" ? window.innerHeight : 1080;
-
-  // **Sun/Moon Calculation**
-  const sunWidth = 150;
-  const sunStartOffset = sunWidth * 0.75;
-  const sunX = (((distantPosition % (screenWidth + sunStartOffset * 2)) - sunStartOffset) + screenWidth / 3);
-  const h = (screenWidth / 2.2);
-  const startY = screenHeight * 0.6;
-  const peakY = 0;
-  const a = (startY - peakY) / Math.pow(h, 2);
-  let sunY = a * Math.pow(sunX + h, 2) + peakY;
-  sunY = Math.min(Math.max(sunY, -startY), startY);
-
   const lastBrightnessRef = useRef(0.6);
   const flippedSolar = useRef<boolean>(false);
   const forwardsAtFlip = useRef<boolean>(false);
   const forwardsCurr = useRef<boolean | undefined>();
+  // **Smooth Cloud Movement with requestAnimationFrame**
+  const prevPositionRef = useRef(position);
+  const frameRef = useRef<number | null>(null);
+
+  // Memoize window dimensions to prevent recalculation
+  const { screenWidth, screenHeight } = useMemo(() => ({
+    screenWidth: typeof window !== "undefined" ? window.innerWidth : 1920,
+    screenHeight: typeof window !== "undefined" ? window.innerHeight : 1080
+  }), []);
+  
+  // Memoize sun position calculations
+  const { sunX, sunY, startY } = useMemo(() => {
+    const sunWidth = 150;
+    const sunStartOffset = sunWidth * 0.75;
+    const x = (((distantPosition % (screenWidth + sunStartOffset * 2)) - sunStartOffset) + screenWidth / 3);
+    const h = (screenWidth / 2.2);
+    const sY = screenHeight * 0.6;
+    const peakY = 0;
+    const a = (sY - peakY) / Math.pow(h, 2);
+    let y = a * Math.pow(x + h, 2) + peakY;
+    y = Math.min(Math.max(y, -sY), sY);
+    return { sunX: x, sunY: y, startY: sY };
+  }, [distantPosition, screenWidth, screenHeight]);
 
   // **Flip sun and moon logic**
   useEffect(() => {
@@ -106,14 +115,11 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
     setTimeout(() => setFadeIn(false), 1500);
   }, []);
 
-  // **Smooth Cloud Movement with requestAnimationFrame**
-  const prevPositionRef = useRef(position);
-  const frameRef = useRef<number | null>(null);
-
   useEffect(() => {
     const updateClouds = () => {
-      const deltaPosition = position - prevPositionRef.current;
-      prevPositionRef.current = position;
+      const cloudPosition = position / 2;
+      const deltaPosition = cloudPosition - prevPositionRef.current;
+      prevPositionRef.current = cloudPosition;
 
       cloudPositionsRef.current = cloudPositionsRef.current.map((cloud) => {
         let newX = cloud.x - deltaPosition * 0.3; // **✅ Adjusted for smoother movement**
@@ -170,6 +176,17 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
           style={{ top: `${sunY}px`, right: `${-sunX}px` }}
         />
       </div>
+
+      {/* Mountains */}
+      <div className="absolute inset-0 w-full h-full" style={{
+          backgroundImage: "url('/images/background/mountains.svg')",
+          backgroundSize: "cover",
+          backgroundRepeat: "repeat-x",
+          backgroundPosition: `${distantPosition}px bottom`,
+          zIndex: 6, 
+          filter: !startActive ? `brightness(${mountainBrightnessRef.current})` : 'none',
+        }}
+      />
 
       {/* Clouds */}
       {cloudPositionsRef.current.map((cloud, index) => (
