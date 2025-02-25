@@ -6,13 +6,13 @@ interface BackgroundProps {
   position: number;
   distantPosition: number;
   startActive: boolean;
-  cloudPace: number;
+  cloudPace?: number;
+  isMovingBackwards: boolean;
+  isMovingForwards: boolean;
 }
 
-export default function BackgroundWrapper({ position, distantPosition, startActive }: BackgroundProps) {
+export default function BackgroundWrapper({ position, distantPosition, startActive, cloudPace = 0.3, isMovingBackwards, isMovingForwards }: BackgroundProps) {
   const [sunActive, setSunActive] = useState(true);
-  const isMovingBackward = useSelector((state: RootState) => state.app.isMovingBackward);
-  const isMovingForwards = useSelector((state: RootState) => state.app.isMovingForwards);
 
   // useRef values (don't trigger re-renders)
   const backgroundOpacityRef = useRef(0.7);
@@ -23,7 +23,6 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
   const flippedSolar = useRef<boolean>(false);
   const forwardsAtFlip = useRef<boolean>(false);
   const forwardsCurr = useRef<boolean | undefined>();
-  // **Smooth Cloud Movement with requestAnimationFrame**
   const prevPositionRef = useRef(position);
   const frameRef = useRef<number | null>(null);
 
@@ -59,9 +58,9 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
   }, [sunY]);
 
   useEffect(() => {
-    if (isMovingBackward) forwardsCurr.current = false;
+    if (isMovingBackwards) forwardsCurr.current = false;
     if (isMovingForwards) forwardsCurr.current = true;
-  }, [isMovingBackward, isMovingForwards]);
+  }, [isMovingBackwards, isMovingForwards]);
 
   useEffect(() => {
     if (flippedSolar.current && forwardsAtFlip.current !== forwardsCurr.current) {
@@ -70,7 +69,7 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
     }
   }, [forwardsCurr.current]);
 
-  // **Brightness Adjustments**
+  // Brightness changes depending on if the sun is active or the moon and how high the particular luminary is in the sky
   useEffect(() => {
     let animationFrameId: number;
 
@@ -98,7 +97,7 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
     return () => cancelAnimationFrame(animationFrameId);
   }, [sunY, sunActive]);
 
-  // **Cloud Initialization**
+  // Cloud Initialization & Cloud Logic
   const cloudInitialPositions = [screenWidth * 0.2, screenWidth * 0.5, screenWidth * 0.8]; // Dynamic X positions
   const cloudYOffset = [220, -20, 120]; // Y positions
   const cloudSizes = [100, 240, 60]; // Widths
@@ -122,9 +121,9 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
       prevPositionRef.current = cloudPosition;
 
       cloudPositionsRef.current = cloudPositionsRef.current.map((cloud) => {
-        let newX = cloud.x - deltaPosition * 0.3; // **✅ Adjusted for smoother movement**
+        let newX = cloud.x - deltaPosition * 0.3; // Same as original logic
 
-        // **Wrap clouds around screen edges**
+        // Wrap clouds around screen edges - same as original logic
         if (newX < -cloud.size) {
           newX += screenWidth + cloud.size;
         } else if (newX > screenWidth) {
@@ -141,7 +140,7 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
     return () => {
       if (frameRef.current) cancelAnimationFrame(frameRef.current);
     };
-  }, [position]);
+  }, [position, screenWidth]);
 
   return (
     <>

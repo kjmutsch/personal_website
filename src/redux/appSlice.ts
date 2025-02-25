@@ -1,13 +1,13 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface AppState {
-  isMovingBackward: boolean;
+  isMovingBackwards: boolean;
   isMovingForwards: boolean;
   isJumping: boolean;
 }
 
 const initialState: AppState = {
-  isMovingBackward: false, // Default values
+  isMovingBackwards: false, // Default values
   isMovingForwards: false,
   isJumping: false
 };
@@ -17,7 +17,7 @@ const appSlice = createSlice({
   initialState,
   reducers: {
     setIsMovingBackward: (state, action: PayloadAction<boolean>) => {
-      state.isMovingBackward = action.payload;
+      state.isMovingBackwards = action.payload;
     },
     setIsMovingForwards: (state, action: PayloadAction<boolean>) => {
         state.isMovingForwards = action.payload;

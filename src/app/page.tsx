@@ -22,7 +22,8 @@ export default function Home() {
   const [cloudPosition, setCloudPosition] = useState(0);
   const [ready, setReady] = useState(false);
 
-  const isMovingBackward = useSelector((state: RootState) => state.app.isMovingBackward);
+  const isMovingBackwards = useSelector((state: RootState) => state.app.isMovingBackwards);
+  const isMovingForwards = useSelector((state: RootState) => state.app.isMovingForwards);
 
   const handleStart = async () => {
     play();
@@ -58,7 +59,7 @@ export default function Home() {
   
     //console.log("Checking Coin Spawn - Current Segment:", currentSegment, "Last Generated:", lastGeneratedSegment.current);
   
-    if (!isMovingBackward && currentSegment > lastGeneratedSegment.current) {
+    if (!isMovingBackwards && currentSegment > lastGeneratedSegment.current) {
       lastGeneratedSegment.current = currentSegment;
   
       // Cycle coin height properly
@@ -77,13 +78,11 @@ export default function Home() {
         return [...filteredCoins, newCoin];
       });
     }
-  }, [backgroundPosition, isMovingBackward]);
+  }, [backgroundPosition, isMovingBackwards]);
   
   const handleCollectCoin = (coinId: number) => {
     setCoins((prevCoins) => prevCoins.filter((coin) => coin.id !== coinId)); // Remove collected coin
   };
-
-  console.log(coins)
 
   return (
     <div className="relative h-screen w-screen overflow-hidden">
@@ -96,6 +95,8 @@ export default function Home() {
         cloudPace={cloudPosition}
         distantPosition={distantBackgroundPosition}
         startActive={onStart}
+        isMovingBackwards={isMovingBackwards}
+        isMovingForwards={isMovingForwards}
       />
 
       {/* Coins */}

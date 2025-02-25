@@ -15,7 +15,7 @@ function Robot({ ready, setBackgroundPosition, setDistantBackgroundPosition, set
     const dispatch = useAppDispatch();
     const [introduction, setIntroduction] = useState(true);
     const [isMovingForward, setMovingForward] = useState(false);
-    const [isMovingBackward, setMovingBackward] = useState(false);
+    const [isMovingBackwards, setMovingBackward] = useState(false);
     const [jump, setJump] = useState(false);
     const jumpRef = useRef(false);
     const lastMovement = useRef<string | null>(null);
@@ -41,7 +41,7 @@ function Robot({ ready, setBackgroundPosition, setDistantBackgroundPosition, set
         const deltaTime = (timestamp - lastTimestampRef.current) / 16.67; // Normalize to 60 FPS
         lastTimestampRef.current = timestamp;
 
-        if (isMovingForward || isMovingBackward) {
+        if (isMovingForward || isMovingBackwards) {
             const direction = isMovingForward ? -1 : 1;
 
             // Consistent movement speed across frame rates
@@ -58,7 +58,7 @@ function Robot({ ready, setBackgroundPosition, setDistantBackgroundPosition, set
     };
 
     useEffect(() => {
-        if (isMovingForward || isMovingBackward) {
+        if (isMovingForward || isMovingBackwards) {
             frameRef.current = requestAnimationFrame(moveRobot);
         } else if (frameRef.current) {
             cancelAnimationFrame(frameRef.current);
@@ -67,12 +67,12 @@ function Robot({ ready, setBackgroundPosition, setDistantBackgroundPosition, set
         return () => {
             if (frameRef.current) cancelAnimationFrame(frameRef.current);
         };
-    }, [isMovingForward, isMovingBackward]);
+    }, [isMovingForward, isMovingBackwards]);
 
     // **Handle Wheel Rotation**
     useEffect(() => {
-        if (isMovingForward || isMovingBackward) {
-            const direction = isMovingBackward ? -1 : 1; // Reverse when moving backward
+        if (isMovingForward || isMovingBackwards) {
+            const direction = isMovingBackwards ? -1 : 1; // Reverse when moving backward
 
             animate(rotationValue, rotationValue.get() + 360 * direction, {
                 duration: 1,
@@ -83,7 +83,7 @@ function Robot({ ready, setBackgroundPosition, setDistantBackgroundPosition, set
             // Stop rotation smoothly when movement stops
             animate(rotationValue, rotationValue.get(), { duration: 0.3, ease: 'easeOut' });
         }
-    }, [isMovingForward, isMovingBackward]);
+    }, [isMovingForward, isMovingBackwards]);
 
     // **Handle Key Presses**
     useEffect(() => {
