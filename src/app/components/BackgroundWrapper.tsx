@@ -188,7 +188,9 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
 
   // Extract current cloud positions for rendering
   const currentCloudPositions = cloudPositionsRef.current;
-
+  // optimizations: willChange is used to alert the browser of styling changes that happen frequently
+  // browser can promote the element to its own GPU layer and can optimize updates to the properties
+  // BUT will change is really resource intensive, so if the character isn't moving then I turn it off
   return (
     <>
       {/* Sky */}
@@ -208,7 +210,7 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
           zIndex: 4, 
           backgroundColor: `rgba(0, 0, 0, ${startActive ? 0 : 1 - backgroundOpacityRef.current})`,
           pointerEvents: "none",
-          willChange: 'background-color'
+          willChange: isMovingBackwards || isMovingForwards ? 'background-color' : 'auto'
         }}
       />
 
@@ -220,7 +222,9 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
           src={`/images/background/${sunActive ? "sun.png" : "moon.png"}`} 
           alt={sunActive ? "Sun" : "Moon"}
           className="absolute w-[350px] h-[350px]" 
-          style={{ top: `${sunY}px`, right: `${-sunX}px` }}
+          style={{ top: `${sunY}px`, 
+            right: `${-sunX}px`, 
+            willChange: isMovingBackwards || isMovingForwards ? 'right, top' : 'auto' }}
         />
       </div>
 
@@ -232,7 +236,7 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
           backgroundPosition: `${mountainPositionRef.current}px bottom`,
           zIndex: 6, 
           filter: !startActive ? `brightness(${mountainBrightnessRef.current})` : 'none',
-          willChange: "background-position",
+          willChange: isMovingBackwards || isMovingForwards ? "background-position, filter" : 'auto',
         }}
       />
 
@@ -250,8 +254,9 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
             zIndex: 8,
             right: `${cloud.x}px`,
             top: `${cloud.y}px`,
+            filter: !startActive ? `brightness(${mountainBrightnessRef.current})` : 'none',
             transform: cloud.flip ? "scaleX(-1)" : "none",
-            willChange: "right", // Optimize for animations
+            willChange: isMovingBackwards || isMovingForwards ? "right, filter" : 'auto', // Optimize for animations
           }}
         />
       ))}
@@ -264,7 +269,7 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
           backgroundSize: "cover",
           backgroundRepeat: "repeat-x",
           backgroundPosition: `${position}px 0px`,
-          willChange: "background-position"
+          willChange: isMovingBackwards || isMovingForwards ?  "background-position" : 'auto'
         }}
       />
     </>
