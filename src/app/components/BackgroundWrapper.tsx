@@ -20,10 +20,9 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
   const flippedSolar = useRef<boolean>(false);
   const forwardsAtFlip = useRef<boolean>(false);
   const forwardsCurr = useRef<boolean | undefined>();
-  const prevPositionRef = useRef(position);
-  const prevMountainsPositionRef = useRef(distantPosition); // prev mountain position
   const frameRef = useRef<number | null>(null);
-  const mountainsPositionRef = useRef(distantPosition) // current mountain position
+  const prevDistantPositionRef = useRef(distantPosition); // prev mountain position
+  const mountainPositionRef = useRef(distantPosition); // Track mountain position separately
 
   // Memoize window dimensions to prevent recalculation
   const { screenWidth, screenHeight } = useMemo(() => ({
@@ -45,7 +44,7 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
     return { sunX: x, sunY: y, startY: sY };
   }, [distantPosition, screenWidth, screenHeight]);
 
-  // **Flip sun and moon logic**
+  // Flip sun and moon logic
   useEffect(() => {
     if (sunY >= startY && !flippedSolar.current) {
       setSunActive((prev) => !prev);
@@ -110,6 +109,9 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
       flip: Math.random() < 0.5,
     }));
 
+    // Initialize mountain position
+    mountainPositionRef.current = distantPosition;
+
     setTimeout(() => setFadeIn(false), 1500);
   }, []);
 
@@ -122,9 +124,7 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
     }
     
     // Initialize position tracking
-    prevPositionRef.current = position / 2;
-    prevMountainsPositionRef.current = distantPosition // mountains positions
-    mountainsPositionRef.current = distantPosition
+    prevDistantPositionRef.current = distantPosition;
     let lastTimestamp = 0;
     
     // article & source link:https://www.kirupa.com/animations/ensuring_consistent_animation_speeds.htm
@@ -135,11 +135,8 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
       const deltaTime = lastTimestamp ? (timestamp - lastTimestamp) / 16.67 : 1; // Normalize to ~60fps, which takes approximately 16.67ms, we are converting milliseconds into frame units
       lastTimestamp = timestamp;
       
-      // Get current cloud position
-      let deltaPosition = (distantPosition - prevPositionRef.current);
-      
-      // get current mountain position
-      const mountainDeltaPosition = (distantPosition - prevMountainsPositionRef.current)
+      // calculates deltaPosition for clouds and mountains
+      let deltaPosition = (distantPosition - prevDistantPositionRef.current);
 
       // When moving, ensure we have a minimum movement amount to prevent stutter
       if (isMovingForwards || isMovingBackwards) {
@@ -151,10 +148,12 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
       }
       
       // Update position reference
-      prevPositionRef.current = distantPosition;
-      prevMountainsPositionRef.current = distantPosition;
+      prevDistantPositionRef.current = distantPosition;
 
-      const speedMultiplier = 8.2
+      const speedMultiplier = 8.2;
+      
+      // Update mountain position using the same delta calculation as clouds
+      mountainPositionRef.current += deltaPosition * speedMultiplier * deltaTime;
       
       // Move clouds based on movement direction and speed
       cloudPositionsRef.current = cloudPositionsRef.current.map((cloud) => {
@@ -171,9 +170,6 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
         return { ...cloud, x: newX };
       });
 
-      // update mountain positionwith same delta-time animation technique
-      mountainsPositionRef.current -= mountainDeltaPosition * speedMultiplier * deltaTime;
-      
       // Request next frame
       frameRef.current = requestAnimationFrame(updateAnimations);
     };
@@ -188,12 +184,11 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
         frameRef.current = null;
       }
     };
-  }, [isMovingForwards, isMovingBackwards, screenWidth]);
+  }, [distantPosition, isMovingForwards, isMovingBackwards, screenWidth]);
 
   // Extract current cloud positions for rendering
   const currentCloudPositions = cloudPositionsRef.current;
 
-  console.log(currentCloudPositions);
   return (
     <>
       {/* Sky */}
@@ -213,6 +208,7 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
           zIndex: 4, 
           backgroundColor: `rgba(0, 0, 0, ${startActive ? 0 : 1 - backgroundOpacityRef.current})`,
           pointerEvents: "none",
+          willChange: 'background-color'
         }}
       />
 
@@ -233,9 +229,10 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
           backgroundImage: "url('/images/background/mountains.svg')",
           backgroundSize: "cover",
           backgroundRepeat: "repeat-x",
-          backgroundPosition: `${distantPosition}px bottom`,
+          backgroundPosition: `${mountainPositionRef.current}px bottom`,
           zIndex: 6, 
           filter: !startActive ? `brightness(${mountainBrightnessRef.current})` : 'none',
+          willChange: "background-position",
         }}
       />
 
@@ -267,6 +264,7 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
           backgroundSize: "cover",
           backgroundRepeat: "repeat-x",
           backgroundPosition: `${position}px 0px`,
+          willChange: "background-position"
         }}
       />
     </>
