@@ -1,17 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSelector } from "react-redux";
-import { RootState } from "../../redux/store";
 
 interface BackgroundProps {
   position: number;
   distantPosition: number;
   startActive: boolean;
-  cloudPace?: number;
   isMovingBackwards: boolean;
   isMovingForwards: boolean;
 }
 
-export default function BackgroundWrapper({ position, distantPosition, startActive, cloudPace = 0.3, isMovingBackwards, isMovingForwards }: BackgroundProps) {
+export default function BackgroundWrapper({ position, distantPosition, startActive, isMovingBackwards, isMovingForwards }: BackgroundProps) {
   const [sunActive, setSunActive] = useState(true);
 
   // useRef values (don't trigger re-renders)
@@ -24,7 +21,9 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
   const forwardsAtFlip = useRef<boolean>(false);
   const forwardsCurr = useRef<boolean | undefined>();
   const prevPositionRef = useRef(position);
+  const prevMountainsPositionRef = useRef(distantPosition); // prev mountain position
   const frameRef = useRef<number | null>(null);
+  const mountainsPositionRef = useRef(distantPosition) // current mountain position
 
   // Memoize window dimensions to prevent recalculation
   const { screenWidth, screenHeight } = useMemo(() => ({
@@ -114,34 +113,87 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
     setTimeout(() => setFadeIn(false), 1500);
   }, []);
 
+  // useEffect for cloud and mountain animations
   useEffect(() => {
-    const updateClouds = () => {
-      const cloudPosition = position / 2;
-      const deltaPosition = cloudPosition - prevPositionRef.current;
-      prevPositionRef.current = cloudPosition;
+    // Cancel any existing animation frame
+    if (frameRef.current) {
+      cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    }
+    
+    // Initialize position tracking
+    prevPositionRef.current = position / 2;
+    prevMountainsPositionRef.current = distantPosition // mountains positions
+    mountainsPositionRef.current = distantPosition
+    let lastTimestamp = 0;
+    
+    // article & source link:https://www.kirupa.com/animations/ensuring_consistent_animation_speeds.htm
+    const updateAnimations = (timestamp: number) => {
+      // Calculate time delta for smoother animation, the time delta measures the elapsed time between animation frames
+      // without time delta the animations run at different speeds on different browsers & devices,now actual frame rate doesn't matter
+      // 60 fps is the universal smooth frame rate for animations 
+      const deltaTime = lastTimestamp ? (timestamp - lastTimestamp) / 16.67 : 1; // Normalize to ~60fps, which takes approximately 16.67ms, we are converting milliseconds into frame units
+      lastTimestamp = timestamp;
+      
+      // Get current cloud position
+      let deltaPosition = (distantPosition - prevPositionRef.current);
+      
+      // get current mountain position
+      const mountainDeltaPosition = (distantPosition - prevMountainsPositionRef.current)
 
+      // When moving, ensure we have a minimum movement amount to prevent stutter
+      if (isMovingForwards || isMovingBackwards) {
+        // Add a tiny bit of movement if we're supposed to be moving but delta is too small
+        if (Math.abs(deltaPosition) < 0.1) {
+          if (isMovingForwards) deltaPosition = -0.1;
+          if (isMovingBackwards) deltaPosition = 0.1;
+        }
+      }
+      
+      // Update position reference
+      prevPositionRef.current = distantPosition;
+      prevMountainsPositionRef.current = distantPosition;
+
+      const speedMultiplier = 8.2
+      
+      // Move clouds based on movement direction and speed
       cloudPositionsRef.current = cloudPositionsRef.current.map((cloud) => {
-        let newX = cloud.x - deltaPosition * 0.3; // Same as original logic
-
-        // Wrap clouds around screen edges - same as original logic
+        // Apply smooth movement with delta time
+        let newX = cloud.x - deltaPosition * speedMultiplier * deltaTime;
+        
+        // Wrap clouds around screen edges
         if (newX < -cloud.size) {
           newX += screenWidth + cloud.size;
         } else if (newX > screenWidth) {
           newX -= screenWidth + cloud.size;
         }
-
+        
         return { ...cloud, x: newX };
       });
 
-      frameRef.current = requestAnimationFrame(updateClouds);
+      // update mountain positionwith same delta-time animation technique
+      mountainsPositionRef.current -= mountainDeltaPosition * speedMultiplier * deltaTime;
+      
+      // Request next frame
+      frameRef.current = requestAnimationFrame(updateAnimations);
     };
-
-    frameRef.current = requestAnimationFrame(updateClouds);
+    
+    // Start animation loop
+    frameRef.current = requestAnimationFrame(updateAnimations);
+    
+    // Cleanup
     return () => {
-      if (frameRef.current) cancelAnimationFrame(frameRef.current);
+      if (frameRef.current) {
+        cancelAnimationFrame(frameRef.current);
+        frameRef.current = null;
+      }
     };
-  }, [position, screenWidth]);
+  }, [isMovingForwards, isMovingBackwards, screenWidth]);
 
+  // Extract current cloud positions for rendering
+  const currentCloudPositions = cloudPositionsRef.current;
+
+  console.log(currentCloudPositions);
   return (
     <>
       {/* Sky */}
@@ -188,7 +240,7 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
       />
 
       {/* Clouds */}
-      {cloudPositionsRef.current.map((cloud, index) => (
+      {currentCloudPositions.map((cloud, index) => (
         <img 
           key={index}
           src="/images/background/cloud.png"
@@ -202,6 +254,7 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
             right: `${cloud.x}px`,
             top: `${cloud.y}px`,
             transform: cloud.flip ? "scaleX(-1)" : "none",
+            willChange: "right", // Optimize for animations
           }}
         />
       ))}

@@ -19,7 +19,6 @@ export default function Home() {
   const [showBackground, setShowBackground] = useState(false); // Show background after animation
   const [backgroundPosition, setBackgroundPosition] = useState(0);
   const [distantBackgroundPosition, setDistantBackgroundPosition] = useState(0);
-  const [cloudPosition, setCloudPosition] = useState(0);
   const [ready, setReady] = useState(false);
 
   const isMovingBackwards = useSelector((state: RootState) => state.app.isMovingBackwards);
@@ -92,7 +91,6 @@ export default function Home() {
 
       <BackgroundWrapper
         position={backgroundPosition}
-        cloudPace={cloudPosition}
         distantPosition={distantBackgroundPosition}
         startActive={onStart}
         isMovingBackwards={isMovingBackwards}
@@ -131,7 +129,6 @@ export default function Home() {
           <Robot
             ready={ready}
             setBackgroundPosition={setBackgroundPosition}
-            setCloudPosition={setCloudPosition}
             setDistantBackgroundPosition={setDistantBackgroundPosition}
           />
         </div>

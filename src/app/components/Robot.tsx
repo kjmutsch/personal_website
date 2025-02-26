@@ -8,10 +8,9 @@ interface RobotProps {
     ready: boolean;
     setBackgroundPosition: Dispatch<SetStateAction<number>>;
     setDistantBackgroundPosition: Dispatch<SetStateAction<number>>;
-    setCloudPosition: Dispatch<SetStateAction<number>>;
 }
 
-function Robot({ ready, setBackgroundPosition, setDistantBackgroundPosition, setCloudPosition }: RobotProps) {
+function Robot({ ready, setBackgroundPosition, setDistantBackgroundPosition }: RobotProps) {
     const dispatch = useAppDispatch();
     const [introduction, setIntroduction] = useState(true);
     const [isMovingForward, setMovingForward] = useState(false);
@@ -27,13 +26,12 @@ function Robot({ ready, setBackgroundPosition, setDistantBackgroundPosition, set
 
     const backgroundPositionRef = useRef(0);
     const distantPositionRef = useRef(0);
-    const cloudPositionRef = useRef(0);
     const frameRef = useRef<number | null>(null);
     const lastTimestampRef = useRef<number | null>(null);
 
-    const moveSpeed = 8;
-    const parallaxSpeed = 10;
-    const sunSpeed = moveSpeed / 1.5;
+    const moveSpeed = 6;
+    const parallaxSpeed = 2;
+    const sunSpeed = 2;
 
     // **Smooth movement using requestAnimationFrame**
     const moveRobot = (timestamp: number) => {
@@ -47,11 +45,9 @@ function Robot({ ready, setBackgroundPosition, setDistantBackgroundPosition, set
             // Consistent movement speed across frame rates
             backgroundPositionRef.current += moveSpeed * direction * deltaTime;
             distantPositionRef.current += sunSpeed * direction * deltaTime;
-            cloudPositionRef.current += parallaxSpeed * direction * deltaTime;
 
             setBackgroundPosition(backgroundPositionRef.current);
             setDistantBackgroundPosition(distantPositionRef.current);
-            setCloudPosition(cloudPositionRef.current);
 
             frameRef.current = requestAnimationFrame(moveRobot);
         }
