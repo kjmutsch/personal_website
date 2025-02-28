@@ -1,6 +1,9 @@
 "use client";
 import React, { Dispatch, SetStateAction, useEffect, useRef, useState } from 'react';
 import { animate, motion, useMotionValue } from 'framer-motion';
+// Framer Motion differs from react because react makes a virtual DOM, compares it to the previous one, calculates the minimum changes needed,
+// then batches these changes and updates the real DOM
+// whereas FM updates the DOM elements directly and uses browser's requestAnimationFrame API 
 import { useAppDispatch } from "../../redux/store";
 import { setIsJumping, setIsMovingBackward, setIsMovingForwards } from "../../redux/appSlice";
 
@@ -19,7 +22,14 @@ function Robot({ ready, setBackgroundPosition, setDistantBackgroundPosition }: R
     const jumpRef = useRef(false);
     const lastMovement = useRef<string | null>(null);
 
-    const rotationValue = useMotionValue(0);
+    // useMotionValue does not cause component re-renders when the value changes, use when values change frequently
+    // allows for use of animate function (useState doesn't work well bc it causes rerenders and react batches state updates so animation updates would maybe get grouped together)
+    // with motion values
+    // Framer Motion updates the DOM directly without going through react's reconciliation process
+    // gives more control over animation sequence through chaining.
+    // Chaining means running animations in sequence without interruption
+    const rotationValue = useMotionValue(0); 
+    const yPositionValue = useMotionValue(55); // Start at groundYPosition
     const containerRef = useRef<HTMLDivElement | null>(null);
     const groundYPosition = 55;
     const jumpHeight = -20;
@@ -30,7 +40,6 @@ function Robot({ ready, setBackgroundPosition, setDistantBackgroundPosition }: R
     const lastTimestampRef = useRef<number | null>(null);
 
     const moveSpeed = 6;
-    const parallaxSpeed = 2;
     const sunSpeed = 2;
 
     // **Smooth movement using requestAnimationFrame**
@@ -81,6 +90,29 @@ function Robot({ ready, setBackgroundPosition, setDistantBackgroundPosition }: R
         }
     }, [isMovingForward, isMovingBackwards]);
 
+    // **Handle Jump Animation**
+    useEffect(() => {
+        if (jump) {
+            // Going up animation
+            animate(yPositionValue, jumpHeight, {
+                duration: 0.2,
+                ease: "easeOut",
+                onComplete: () => {
+                    // Coming down animation - no spring, just smooth easeIn
+                    animate(yPositionValue, groundYPosition, {
+                        duration: 0.3,
+                        ease: "easeIn",
+                        onComplete: () => {
+                            setJump(false);
+                            jumpRef.current = false;
+                            dispatch(setIsJumping(false));
+                        }
+                    });
+                }
+            });
+        }
+    }, [jump, dispatch]);
+
     // **Handle Key Presses**
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -126,18 +158,7 @@ function Robot({ ready, setBackgroundPosition, setDistantBackgroundPosition }: R
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('keyup', handleKeyUp);
         };
-    }, [introduction]);
-
-    // **Manage Jump Effect (with setIsJumping)**
-    useEffect(() => {
-        if (jump) {
-            setTimeout(() => {
-                setJump(false);
-                jumpRef.current = false;
-                dispatch(setIsJumping(false)); // ✅ Reset isJumping when landing
-            }, 500);
-        }
-    }, [jump]);
+    }, [introduction, dispatch]);
 
     return (
         <div
@@ -158,15 +179,8 @@ function Robot({ ready, setBackgroundPosition, setDistantBackgroundPosition }: R
                     }}
                     style={{ position: "absolute" }}
                 >
-                    <motion.div
-                        animate={{
-                            y: jump ? [groundYPosition, jumpHeight, groundYPosition] : groundYPosition,
-                        }}
-                        transition={{
-                            duration: 0.5,
-                            ease: 'easeInOut',
-                        }}
-                    >
+                    <motion.div style={{ y: yPositionValue }}> 
+                        {/* direct connection between yPositionValue and the DOM element's transform property */}
                         {/* Robot's body */}
                         <div className="body">
                             <img src="/images/robot/body.png" alt="Body" />

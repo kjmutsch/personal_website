@@ -20,22 +20,38 @@ const Coin = ({ x, y, onCollect, backgroundPosition, id }: CoinProps) => {
     if (!collected) {
       const checkCollision = () => {
         const robotX = 100; // Robot's X position
-        const robotHeight = -104; // body height
-        const jumpHeight = isJumping ? -20 : 0; // Robot jump height
-        const distanceThreshold = 30; // Distance for collection
+        const robotY = 55; // Default Y position (groundYPosition from Robot component)
+        const jumpOffset = isJumping ? 75 : 0; // Approximate offset when jumping
+        
+        // Robot hitbox dimensions
+        const robotWidth = 70; // Approx width of robot
+        const robotHeight = 100; // Approx height of robot
+        
+        // Coin hitbox dimensions
+        const coinWidth = 50;
+        const coinHeight = 50;
+        
+        // Calculate robot position with jump offset
+        const robotYPosition = robotY - jumpOffset;
+        
+        // Convert coin world position to screen position
+        const coinScreenX = x + backgroundPosition;
+        const coinScreenY = y;
+        
+        // Check for overlap between robot and coin hitboxes
+        const overlapX = Math.abs(robotX - coinScreenX) < (robotWidth + coinWidth) / 2;
+        const overlapY = Math.abs((robotYPosition + (robotHeight / 2)) - coinScreenY) < (robotHeight + coinHeight) / 2;
 
-        const coinScreenX = x + backgroundPosition; // Convert world position to screen position
-        const closeEnoughX = Math.abs(robotX - coinScreenX) < distanceThreshold;
-        const closeEnoughY = Math.abs((jumpHeight + robotHeight) - y) < distanceThreshold;
+        //console.log(robotYPosition, robotY, jumpOffset, coinScreenY,overlapX, overlapY)
 
-        if (closeEnoughX && closeEnoughY) {
+        if (overlapX && overlapY) {
           setCollected(true);
           onCollect();
           return;
         }
 
         // Keep checking using requestAnimationFrame
-        animationFrameRef.current = requestAnimationFrame(checkCollision); // instead of useInterval
+        animationFrameRef.current = requestAnimationFrame(checkCollision);
       };
 
       animationFrameRef.current = requestAnimationFrame(checkCollision);
