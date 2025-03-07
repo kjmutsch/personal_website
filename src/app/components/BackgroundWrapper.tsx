@@ -21,87 +21,27 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
   const forwardsAtFlip = useRef<boolean>(false);
   const forwardsCurr = useRef<boolean | undefined>();
   const frameRef = useRef<number | null>(null);
-  const prevDistantPositionRef = useRef(distantPosition); // prev mountain position
-  const mountainPositionRef = useRef(distantPosition); // Track mountain position separately
+  const prevDistantPositionRef = useRef(distantPosition);
+  const mountainPositionRef = useRef(distantPosition);
+  const [sunInit, setSunInit] = useState(false);
+  const sunPositionRef = useRef({ x: 0, y: 0 });
+  const startYRef = useRef(0);
 
   // Memoize window dimensions to prevent recalculation
   const { screenWidth, screenHeight } = useMemo(() => ({
     screenWidth: typeof window !== "undefined" ? window.innerWidth : 1920,
     screenHeight: typeof window !== "undefined" ? window.innerHeight : 1080
   }), []);
-  
-  // Memoize sun position calculations
-  const { sunX, sunY, startY } = useMemo(() => {
-    const sunWidth = 150;
-    const sunStartOffset = sunWidth * 0.75;
-    const x = (((distantPosition % (screenWidth + sunStartOffset * 2)) - sunStartOffset) + screenWidth / 3);
-    const h = (screenWidth / 2.2);
-    const sY = screenHeight * 0.6;
-    const peakY = 0;
-    const a = (sY - peakY) / Math.pow(h, 2);
-    let y = a * Math.pow(x + h, 2) + peakY;
-    y = Math.min(Math.max(y, -sY), sY);
-    return { sunX: x, sunY: y, startY: sY };
-  }, [distantPosition, screenWidth, screenHeight]);
 
-  // Flip sun and moon logic
-  useEffect(() => {
-    if (sunY >= startY && !flippedSolar.current) {
-      setSunActive((prev) => !prev);
-      flippedSolar.current = true;
-      forwardsAtFlip.current = isMovingForwards;
-    } else if (sunY < startY) {
-      flippedSolar.current = false;
-    }
-  }, [sunY]);
-
-  useEffect(() => {
-    if (isMovingBackwards) forwardsCurr.current = false;
-    if (isMovingForwards) forwardsCurr.current = true;
-  }, [isMovingBackwards, isMovingForwards]);
-
-  useEffect(() => {
-    if (flippedSolar.current && forwardsAtFlip.current !== forwardsCurr.current) {
-      setSunActive((prev) => !prev);
-      forwardsAtFlip.current = isMovingForwards;
-    }
-  }, [forwardsCurr.current]);
-
-  // Brightness changes depending on if the sun is active or the moon and how high the particular luminary is in the sky
-  useEffect(() => {
-    let animationFrameId: number;
-
-    const updateBrightness = () => {
-      const brightnessFactor = sunY / startY;
-      const mediumDark = 0.6;
-      const brightAtZero = 1.0;
-      const darkAtZero = 0.3;
-
-      if (sunY === startY) {
-        lastBrightnessRef.current = mediumDark;
-      }
-      const brightnessValue = sunActive
-        ? mediumDark + (brightAtZero - mediumDark) * (1 - Math.abs(brightnessFactor))
-        : mediumDark - (mediumDark - darkAtZero) * (1 - Math.abs(brightnessFactor));
-
-      backgroundOpacityRef.current += (brightnessValue - backgroundOpacityRef.current) * 0.6;
-      mountainBrightnessRef.current += (brightnessValue - mountainBrightnessRef.current) * 0.6;
-      cloudBrightnessRef.current += (brightnessValue - cloudBrightnessRef.current) * 0.6;
-
-      animationFrameId = requestAnimationFrame(updateBrightness);
-    };
-
-    updateBrightness();
-    return () => cancelAnimationFrame(animationFrameId);
-  }, [sunY, sunActive]);
-
-  // Cloud Initialization & Cloud Logic
-  const cloudInitialPositions = [screenWidth * 0.2, screenWidth * 0.5, screenWidth * 0.8]; // Dynamic X positions
-  const cloudYOffset = [220, -20, 120]; // Y positions
-  const cloudSizes = [100, 240, 60]; // Widths
+  // Cloud Initialization
+  const cloudInitialPositions = [screenWidth * 0.2, screenWidth * 0.5, screenWidth * 0.8];
+  const cloudYOffset = [220, -20, 120];
+  const cloudSizes = [100, 240, 60];
   const [fadeIn, setFadeIn] = useState(true);
 
+  // Initialize components
   useEffect(() => {
+    // Initialize cloud positions
     cloudPositionsRef.current = cloudInitialPositions.map((pos, i) => ({
       x: pos,
       y: cloudYOffset[i],
@@ -111,11 +51,27 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
 
     // Initialize mountain position
     mountainPositionRef.current = distantPosition;
-
+    // sun start position
+    startYRef.current = screenHeight * 0.6; // about halfway on y axis
+    
+    // fade in clouds
     setTimeout(() => setFadeIn(false), 1500);
+    
+    return () => {
+      if (frameRef.current) {
+        cancelAnimationFrame(frameRef.current);
+        frameRef.current = null;
+      }
+    };
   }, []);
 
-  // useEffect for cloud and mountain animations
+  // for tracking movement direction
+  useEffect(() => {
+    if (isMovingBackwards) forwardsCurr.current = false;
+    if (isMovingForwards) forwardsCurr.current = true;
+  }, [isMovingBackwards, isMovingForwards]);
+
+  // Main animation loop for all animated elements (cloud, mountain, sun/moon)
   useEffect(() => {
     // Cancel any existing animation frame
     if (frameRef.current) {
@@ -135,27 +91,73 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
       const deltaTime = lastTimestamp ? (timestamp - lastTimestamp) / 16.67 : 1; // Normalize to ~60fps, which takes approximately 16.67ms, we are converting milliseconds into frame units
       lastTimestamp = timestamp;
       
-      // calculates deltaPosition for clouds and mountains
+      // Calculate position delta
       let deltaPosition = (distantPosition - prevDistantPositionRef.current);
 
-      // When moving, ensure we have a minimum movement amount to prevent stutter
+      // Ensure minimum movement when moving to prevent stutter
       if (isMovingForwards || isMovingBackwards) {
-        // Add a tiny bit of movement if we're supposed to be moving but delta is too small
+        // adds a small amount of movement when delta is too small but movement should happen
         if (Math.abs(deltaPosition) < 0.1) {
           if (isMovingForwards) deltaPosition = -0.1;
           if (isMovingBackwards) deltaPosition = 0.1;
         }
       }
       
-      // Update position reference
       prevDistantPositionRef.current = distantPosition;
-
       const speedMultiplier = 8.2;
-      
-      // Update mountain position using the same delta calculation as clouds
+      // Update mountain position
       mountainPositionRef.current += deltaPosition * speedMultiplier * deltaTime;
       
-      // Move clouds based on movement direction and speed
+      // Update sun position
+      const sunWidth = 350; // 
+      const sunStartOffset = sunWidth * 0.75;
+      const x = (((distantPosition % (screenWidth + sunStartOffset * 2)) - sunStartOffset) + screenWidth / 3);
+      const h = (screenWidth / 2.2);
+      const sY = startYRef.current;
+      const peakY = 0;
+      const a = (sY - peakY) / Math.pow(h, 2);
+      let y = a * Math.pow(x + h, 2) + peakY;
+      y = Math.min(Math.max(y, -sY), sY);
+      
+      // Save sun position
+      sunPositionRef.current = { x, y };
+      if(!sunInit) setSunInit(true);
+      
+      // Handle sun/moon flipping
+      if (y >= sY && !flippedSolar.current) {
+        setSunActive(prev => !prev);
+        flippedSolar.current = true;
+        forwardsAtFlip.current = isMovingForwards;
+      } else if (y < sY) {
+        flippedSolar.current = false;
+      }
+      
+      // Handle direction change during flipped state
+      if (flippedSolar.current && forwardsAtFlip.current !== forwardsCurr.current) {
+        setSunActive(prev => !prev);
+        forwardsAtFlip.current = isMovingForwards;
+      }
+      
+      // Update brightness based on sun position
+      const brightnessFactor = y / sY;
+      const mediumDark = 0.6;
+      const brightAtZero = 1.0;
+      const darkAtZero = 0.3;
+
+      if (y === sY) {
+        lastBrightnessRef.current = mediumDark;
+      }
+      
+      const targetBrightness = sunActive
+        ? mediumDark + (brightAtZero - mediumDark) * (1 - Math.abs(brightnessFactor))
+        : mediumDark - (mediumDark - darkAtZero) * (1 - Math.abs(brightnessFactor));
+
+      // Smooth brightness transitions
+      backgroundOpacityRef.current += (targetBrightness - backgroundOpacityRef.current) * 0.6;
+      mountainBrightnessRef.current += (targetBrightness - mountainBrightnessRef.current) * 0.6;
+      cloudBrightnessRef.current += (targetBrightness - cloudBrightnessRef.current) * 0.6;
+      
+      // Update cloud positions
       cloudPositionsRef.current = cloudPositionsRef.current.map((cloud) => {
         // Apply smooth movement with delta time
         let newX = cloud.x - deltaPosition * speedMultiplier * deltaTime;
@@ -184,13 +186,15 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
         frameRef.current = null;
       }
     };
-  }, [distantPosition, isMovingForwards, isMovingBackwards, screenWidth]);
+  }, [distantPosition, isMovingForwards, isMovingBackwards, screenWidth, screenHeight]);
 
-  // Extract current cloud positions for rendering
+  // Get current positions for rendering
   const currentCloudPositions = cloudPositionsRef.current;
-  // optimizations: willChange is used to alert the browser of styling changes that happen frequently
-  // browser can promote the element to its own GPU layer and can optimize updates to the properties
-  // BUT will change is really resource intensive, so if the character isn't moving then I turn it off
+  const { x: sunX, y: sunY } = sunPositionRef.current;
+  
+  // Determine whether to use willChange optimization
+  const isMoving = isMovingBackwards || isMovingForwards;
+  
   return (
     <>
       {/* Sky */}
@@ -210,7 +214,7 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
           zIndex: 4, 
           backgroundColor: `rgba(0, 0, 0, ${startActive ? 0 : 1 - backgroundOpacityRef.current})`,
           pointerEvents: "none",
-          willChange: isMovingBackwards || isMovingForwards ? 'background-color' : 'auto'
+          willChange: isMoving ? 'background-color' : 'auto'
         }}
       />
 
@@ -222,9 +226,12 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
           src={`/images/background/${sunActive ? "sun.png" : "moon.png"}`} 
           alt={sunActive ? "Sun" : "Moon"}
           className="absolute w-[350px] h-[350px]" 
-          style={{ top: `${sunY}px`, 
+          style={{ 
+            top: `${sunY}px`, 
             right: `${-sunX}px`, 
-            willChange: isMovingBackwards || isMovingForwards ? 'right, top' : 'auto' }}
+            willChange: isMoving ? 'right, top' : 'auto',
+            display: !sunInit ? 'none' : ''
+          }}
         />
       </div>
 
@@ -236,7 +243,7 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
           backgroundPosition: `${mountainPositionRef.current}px bottom`,
           zIndex: 6, 
           filter: !startActive ? `brightness(${mountainBrightnessRef.current})` : 'none',
-          willChange: isMovingBackwards || isMovingForwards ? "background-position, filter" : 'auto',
+          willChange: isMoving ? "background-position, filter" : 'auto',
         }}
       />
 
@@ -254,9 +261,9 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
             zIndex: 8,
             right: `${cloud.x}px`,
             top: `${cloud.y}px`,
-            filter: !startActive ? `brightness(${mountainBrightnessRef.current})` : 'none',
+            filter: !startActive ? `brightness(${cloudBrightnessRef.current})` : 'none',
             transform: cloud.flip ? "scaleX(-1)" : "none",
-            willChange: isMovingBackwards || isMovingForwards ? "right, filter" : 'auto', // Optimize for animations
+            willChange: isMoving ? "right, filter" : 'auto',
           }}
         />
       ))}
@@ -269,7 +276,7 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
           backgroundSize: "cover",
           backgroundRepeat: "repeat-x",
           backgroundPosition: `${position}px 0px`,
-          willChange: isMovingBackwards || isMovingForwards ?  "background-position" : 'auto'
+          willChange: isMoving ? "background-position" : 'auto'
         }}
       />
     </>

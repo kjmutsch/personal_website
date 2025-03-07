@@ -11,9 +11,10 @@ interface RobotProps {
     ready: boolean;
     setBackgroundPosition: Dispatch<SetStateAction<number>>;
     setDistantBackgroundPosition: Dispatch<SetStateAction<number>>;
+    setRobotY: Dispatch<SetStateAction<number>>;
 }
 
-function Robot({ ready, setBackgroundPosition, setDistantBackgroundPosition }: RobotProps) {
+function Robot({ ready, setBackgroundPosition, setDistantBackgroundPosition, setRobotY }: RobotProps) {
     const dispatch = useAppDispatch();
     const [introduction, setIntroduction] = useState(true);
     const [isMovingForward, setMovingForward] = useState(false);
@@ -34,6 +35,7 @@ function Robot({ ready, setBackgroundPosition, setDistantBackgroundPosition }: R
     const groundYPosition = 55;
     const jumpHeight = -20;
 
+    const robotRef = useRef<HTMLDivElement | null>(null); // for y position
     const backgroundPositionRef = useRef(0);
     const distantPositionRef = useRef(0);
     const frameRef = useRef<number | null>(null);
@@ -41,6 +43,13 @@ function Robot({ ready, setBackgroundPosition, setDistantBackgroundPosition }: R
 
     const moveSpeed = 6;
     const sunSpeed = 2;
+
+    useEffect(() => {
+        if (robotRef.current) {
+            const rect = robotRef.current.getBoundingClientRect();
+            setRobotY(rect.top)
+        }
+    }, [ready]); // Runs when ready is true (or other dependencies if needed)    
 
     // **Smooth movement using requestAnimationFrame**
     const moveRobot = (timestamp: number) => {
@@ -169,6 +178,7 @@ function Robot({ ready, setBackgroundPosition, setDistantBackgroundPosition }: R
             {ready && (
                 <motion.div
                     className="bitly"
+                    ref={robotRef}
                     initial={{ x: '-50vw' }}
                     animate={{ x: 100 }}
                     transition={{

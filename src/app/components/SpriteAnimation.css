@@ -1,0 +1,13 @@
+.sprite {
+    width: 100px; /* Width of a single frame */
+    height: 100px; /* Height of a single frame */
+    background-image: url("/path-to-your-sprite-sheet.png");
+    background-repeat: no-repeat;
+    animation: play 1s steps(4) infinite; /* 4 frames */
+  }
+  
+  @keyframes play {
+    from { background-position: 0px; }
+    to { background-position: -400px; } /* 100px * 4 frames */
+  }
+  

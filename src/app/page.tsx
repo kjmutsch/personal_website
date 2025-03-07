@@ -20,6 +20,7 @@ export default function Home() {
   const [backgroundPosition, setBackgroundPosition] = useState(0);
   const [distantBackgroundPosition, setDistantBackgroundPosition] = useState(0);
   const [ready, setReady] = useState(false);
+  const [robotY, setRobotY] = useState(0);
 
   const isMovingBackwards = useSelector((state: RootState) => state.app.isMovingBackwards);
   const isMovingForwards = useSelector((state: RootState) => state.app.isMovingForwards);
@@ -42,7 +43,7 @@ export default function Home() {
 
   // Create coin pattern
   const coinRate = 500; // every 500px
-  const coinYOffset = [0, -50, -100]; // place the coins in different spots on y axis
+  const coinYOffset = [50, -20, -10]; // place the coins in different spots on y axis
   const [coins, setCoins] = useState<{ x: number; y: number; id: number }[]>([]);
   const screenWidth = typeof window !== "undefined" ? window.innerWidth : 1920;
 
@@ -70,14 +71,14 @@ export default function Home() {
   
         const newCoin = {
           x: -backgroundPosition + screenWidth,
-          y: coinYOffset[nextHeightIndex],
+          y: robotY + coinYOffset[nextHeightIndex],
           id: currentSegment, // Unique ID based on segment
         };
   
         return [...filteredCoins, newCoin];
       });
     }
-  }, [backgroundPosition, isMovingBackwards]);
+  }, [backgroundPosition, isMovingBackwards, robotY]);
   
   const handleCollectCoin = (coinId: number) => {
     setCoins((prevCoins) => prevCoins.filter((coin) => coin.id !== coinId)); // Remove collected coin
@@ -101,7 +102,7 @@ export default function Home() {
       {coins
       .filter((coin) => coin.x + backgroundPosition > -100 && coin.x + backgroundPosition < screenWidth + 100) // ✅ Only render visible coins
       .map((coin) => (
-        <Coin key={coin.id} id={coin.id} backgroundPosition={backgroundPosition} x={coin.x} y={coin.y} onCollect={() => handleCollectCoin(coin.id)} />
+        <Coin key={coin.id} id={coin.id} backgroundPosition={backgroundPosition} x={coin.x} y={coin.y} robotY={robotY} onCollect={() => handleCollectCoin(coin.id)} />
       ))}
 
 
@@ -130,6 +131,7 @@ export default function Home() {
             ready={ready}
             setBackgroundPosition={setBackgroundPosition}
             setDistantBackgroundPosition={setDistantBackgroundPosition}
+            setRobotY={setRobotY}
           />
         </div>
       )}
