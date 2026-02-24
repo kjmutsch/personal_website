@@ -17,7 +17,7 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
   const cloudBrightnessRef = useRef(1);
   const cloudPositionsRef = useRef<{ x: number; y: number; size: number; flip: boolean }[]>([]);
   const lastBrightnessRef = useRef(0.6);
-  const flippedSolar = useRef<boolean>(false);
+  const flippedSolar = useRef<boolean>(true);
   const forwardsAtFlip = useRef<boolean>(false);
   const forwardsCurr = useRef<boolean | undefined>();
   const frameRef = useRef<number | null>(null);
