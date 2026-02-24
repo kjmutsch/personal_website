@@ -12,9 +12,10 @@ interface RobotProps {
     setBackgroundPosition: Dispatch<SetStateAction<number>>;
     setDistantBackgroundPosition: Dispatch<SetStateAction<number>>;
     setRobotY: Dispatch<SetStateAction<number>>;
+    scale: number;
 }
 
-function Robot({ ready, setBackgroundPosition, setDistantBackgroundPosition, setRobotY }: RobotProps) {
+function Robot({ ready, setBackgroundPosition, setDistantBackgroundPosition, setRobotY, scale }: RobotProps) {
     const dispatch = useAppDispatch();
     const [introduction, setIntroduction] = useState(true);
     const [isMovingForward, setMovingForward] = useState(false);
@@ -29,11 +30,11 @@ function Robot({ ready, setBackgroundPosition, setDistantBackgroundPosition, set
     // Framer Motion updates the DOM directly without going through react's reconciliation process
     // gives more control over animation sequence through chaining.
     // Chaining means running animations in sequence without interruption
-    const rotationValue = useMotionValue(0); 
-    const yPositionValue = useMotionValue(55); // Start at groundYPosition
+    const rotationValue = useMotionValue(0);
+    const yPositionValue = useMotionValue(55 * scale); // Start at groundYPosition
     const containerRef = useRef<HTMLDivElement | null>(null);
-    const groundYPosition = 55;
-    const jumpHeight = -20;
+    const groundYPosition = 55 * scale;
+    const jumpHeight = -20 * scale;
 
     const robotRef = useRef<HTMLDivElement | null>(null); // for y position
     const backgroundPositionRef = useRef(0);
@@ -200,28 +201,28 @@ function Robot({ ready, setBackgroundPosition, setDistantBackgroundPosition, set
                         <img
                             src="images/robot/robot_left.png"
                             className="left-arm"
-                            style={{ position: 'absolute', top: '45px', left: '-3px' }}
+                            style={{ position: 'absolute', top: `${45 * scale}px`, left: '-3px' }}
                         />
 
                         {/* Right Arm */}
                         <img
                             src="images/robot/robot_right.png"
                             className="right-arm"
-                            style={{ position: 'absolute', top: '45px', left: '72px' }}
+                            style={{ position: 'absolute', top: `${45 * scale}px`, left: '72px' }}
                         />
 
                         {/* Left Wheel */}
                         <motion.img
                             src="images/robot/robot_wheel.png"
                             className="left-wheel"
-                            style={{ position: 'absolute', top: '85px', left: '20px', rotate: rotationValue }}
+                            style={{ position: 'absolute', top: `${85 * scale}px`, left: '20px', rotate: rotationValue }}
                         />
 
                         {/* Right Wheel */}
                         <motion.img
                             src="images/robot/robot_wheel.png"
                             className="right-wheel"
-                            style={{ position: 'absolute', top: '85px', left: '50px', rotate: rotationValue }}
+                            style={{ position: 'absolute', top: `${85 * scale}px`, left: '50px', rotate: rotationValue }}
                         />
                     </motion.div>
                 </motion.div>

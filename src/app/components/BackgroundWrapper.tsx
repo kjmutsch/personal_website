@@ -203,7 +203,7 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
           zIndex: 1,
           overflow: "hidden",
           backgroundImage: "url('/images/background/sky.svg')",
-          backgroundSize: "cover",
+          backgroundSize: "auto 100%",
           backgroundRepeat: "repeat-x",
         }}
       />
@@ -238,10 +238,10 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
       {/* Mountains */}
       <div className="absolute inset-0 w-full h-full" style={{
           backgroundImage: "url('/images/background/mountains.svg')",
-          backgroundSize: "cover",
+          backgroundSize: "auto 100%",
           backgroundRepeat: "repeat-x",
           backgroundPosition: `${mountainPositionRef.current}px bottom`,
-          zIndex: 6, 
+          zIndex: 6,
           filter: !startActive ? `brightness(${mountainBrightnessRef.current})` : 'none',
           willChange: isMoving ? "background-position, filter" : 'auto',
         }}
@@ -273,7 +273,7 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
         style={{
           zIndex: 9,
           backgroundImage: "url('/images/background/background.svg')",
-          backgroundSize: "cover",
+          backgroundSize: "auto 100%",
           backgroundRepeat: "repeat-x",
           backgroundPosition: `${position}px 0px`,
           willChange: isMoving ? "background-position" : 'auto'

@@ -25,8 +25,14 @@ export default function Home() {
   const isMovingBackwards = useSelector((state: RootState) => state.app.isMovingBackwards);
   const isMovingForwards = useSelector((state: RootState) => state.app.isMovingForwards);
 
+  // Calculate scale factor based on viewport height
+  const SVG_BASE_HEIGHT = 771;
+  const screenHeight = typeof window !== "undefined" ? window.innerHeight : 1080;
+  const scale = screenHeight / SVG_BASE_HEIGHT;
+
   const handleStart = async () => {
     play();
+    console.log('pressed')
     setShowIris(true); // Trigger iris animation
 
     // After 1.8 seconds, hide Start and show just Background
@@ -126,12 +132,13 @@ export default function Home() {
 
       {showBackground && (
         <div>
-          <TextBubble ready={ready} />
+          <TextBubble ready={ready} scale={scale} />
           <Robot
             ready={ready}
             setBackgroundPosition={setBackgroundPosition}
             setDistantBackgroundPosition={setDistantBackgroundPosition}
             setRobotY={setRobotY}
+            scale={scale}
           />
         </div>
       )}

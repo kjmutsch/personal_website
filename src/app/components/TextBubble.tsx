@@ -3,11 +3,17 @@ import React, { useEffect, useRef, useState } from 'react';
 
 interface TextBubbleProps {
     ready: boolean;
+    scale: number;
 }
 
-function TextBubble({ready}: TextBubbleProps) {  
+function TextBubble({ready, scale}: TextBubbleProps) {
     const [delayedReady, setDelayedReady] = useState(false);
     const containerRef = useRef<HTMLDivElement | null>(null);
+
+    // Scale the dimensions based on viewport height
+    const bubbleWidth = 650 * scale;
+    const bubbleHeight = 400 * scale;
+    const bubbleTop = 300 * scale;
 
 
     const handleDelay = async () => {
@@ -48,7 +54,7 @@ function TextBubble({ready}: TextBubbleProps) {
     };
 
     return (
-        <div ref={containerRef} className="overflow-auto" style={{ position: 'absolute', overflow: 'hidden', width: '650px', height: '400px', top: '300px'}}>
+        <div ref={containerRef} className="overflow-auto" style={{ position: 'absolute', overflow: 'hidden', width: `${bubbleWidth}px`, height: `${bubbleHeight}px`, top: `${bubbleTop}px`}}>
             {delayedReady && (
                 <div style={{position: 'absolute',zIndex: 999}}>
                     <img src="/images/speech/BITLY_INTRO.png" alt="speech-bubble" style={{ width: '100%', height: '100%', objectFit: 'contain' }}/>
