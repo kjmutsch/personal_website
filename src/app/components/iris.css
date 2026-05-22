@@ -13,6 +13,7 @@
   background-color: black;
   clip-path: circle(0vmax at center); /* Start with the circle fully closed (black) */
   animation: iris-close-open 4s ease-in-out forwards;
+  pointer-events: none;
 }
 
 @keyframes iris-close-open {

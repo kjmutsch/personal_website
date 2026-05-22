@@ -13,11 +13,23 @@ interface RobotProps {
     setDistantBackgroundPosition: Dispatch<SetStateAction<number>>;
     setRobotY: Dispatch<SetStateAction<number>>;
     scale: number;
+    resuming?: boolean;
+    initialBackgroundPosition?: number;
+    initialDistantBackgroundPosition?: number;
 }
 
-function Robot({ ready, setBackgroundPosition, setDistantBackgroundPosition, setRobotY, scale }: RobotProps) {
+function Robot({
+    ready,
+    setBackgroundPosition,
+    setDistantBackgroundPosition,
+    setRobotY,
+    scale,
+    resuming = false,
+    initialBackgroundPosition = 0,
+    initialDistantBackgroundPosition = 0,
+}: RobotProps) {
     const dispatch = useAppDispatch();
-    const [introduction, setIntroduction] = useState(true);
+    const [introduction, setIntroduction] = useState(!resuming);
     const [isMovingForward, setMovingForward] = useState(false);
     const [isMovingBackwards, setMovingBackward] = useState(false);
     const [jump, setJump] = useState(false);
@@ -37,8 +49,9 @@ function Robot({ ready, setBackgroundPosition, setDistantBackgroundPosition, set
     const jumpHeight = -20 * scale;
 
     const robotRef = useRef<HTMLDivElement | null>(null); // for y position
-    const backgroundPositionRef = useRef(0);
-    const distantPositionRef = useRef(0);
+    // Seed from restored session so the world doesn't snap back to origin on first move.
+    const backgroundPositionRef = useRef(initialBackgroundPosition);
+    const distantPositionRef = useRef(initialDistantBackgroundPosition);
     const frameRef = useRef<number | null>(null);
     const lastTimestampRef = useRef<number | null>(null);
 
@@ -125,7 +138,17 @@ function Robot({ ready, setBackgroundPosition, setDistantBackgroundPosition, set
 
     // **Handle Key Presses**
     useEffect(() => {
+        const isGameKey = (key: string) =>
+            key === " " || key === "ArrowRight" || key === "ArrowLeft" || key === "ArrowUp" || key === "ArrowDown";
+
         const handleKeyDown = (event: KeyboardEvent) => {
+            if (isGameKey(event.key)) {
+                event.preventDefault();
+                if (document.activeElement instanceof HTMLElement) {
+                    document.activeElement.blur();
+                }
+            }
+
             if (event.key === " " && introduction && !jumpRef.current) {
                 setJump(true);
                 jumpRef.current = true;
@@ -152,6 +175,9 @@ function Robot({ ready, setBackgroundPosition, setDistantBackgroundPosition, set
         };
 
         const handleKeyUp = (event: KeyboardEvent) => {
+            if (isGameKey(event.key)) {
+                event.preventDefault();
+            }
             if (event.key === 'ArrowRight' || event.key === 'd') {
                 setMovingForward(false);
                 dispatch(setIsMovingForwards(false));
@@ -172,7 +198,7 @@ function Robot({ ready, setBackgroundPosition, setDistantBackgroundPosition, set
 
     return (
         <div
-            style={{ outline: 'none', position: 'relative', height: '100vh', overflow: 'hidden', zIndex: 999 }}
+            style={{ outline: 'none', position: 'relative', height: '100vh', overflow: 'hidden', zIndex: 999, pointerEvents: 'none' }}
             tabIndex={0}
             ref={containerRef}
         >
@@ -180,7 +206,7 @@ function Robot({ ready, setBackgroundPosition, setDistantBackgroundPosition, set
                 <motion.div
                     className="bitly"
                     ref={robotRef}
-                    initial={{ x: '-50vw' }}
+                    initial={{ x: resuming ? 100 : '-50vw' }}
                     animate={{ x: 100 }}
                     transition={{
                         type: 'spring',

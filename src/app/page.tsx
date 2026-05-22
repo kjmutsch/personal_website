@@ -1,27 +1,48 @@
-"use client"; // This is a client component 👈🏽
+// Home page: hosts the side-scrolling game, spawns coins/page icons, and drives transitions.
+"use client";
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useDispatch, useSelector } from "react-redux";
+import useSound from "use-sound";
 import Start from "./components/Start";
 import AudioPlayer from "./components/AudioPlayer";
-import useSound from "use-sound";
-import Iris from "./components/Iris"; // Import Iris
 import Robot from "./components/Robot";
 import TextBubble from "./components/TextBubble";
 import BackgroundWrapper from "./components/BackgroundWrapper";
-import Link from "next/link";
 import Coin from "./components/Coin";
-import { useSelector } from "react-redux";
+import PageIcon from "./components/PageIcon";
+import NavMenu from "./components/NavMenu";
+import CoinCounter from "./components/CoinCounter";
 import { RootState } from "@/redux/store";
+import { triggerIris, endIris } from "@/redux/appSlice";
+import { clearGameSession, loadGameSession, saveGameSession } from "./lib/gameSession";
+
+const PAGES: { id: string; route: string; x: number; yOffset: number; icon?: string }[] = [
+  // yOffset is added to the robot's screen-space Y so the icon always sits in the robot's path.
+  { id: "resume", route: "/resume", x: 2200, yOffset: 20 },
+  { id: "projects", route: "/projects", x: 4400, yOffset: 20, icon: "/images/objects/folder_icon.png" },
+];
+
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export default function Home() {
   const [play] = useSound("/LatinHouseBed.mp3");
-  const [onStart, setOnStart] = useState(true); // Show the Start button initially
-  const [showIris, setShowIris] = useState(false); // Trigger iris animation
-  const [showBackground, setShowBackground] = useState(false); // Show background after animation
-  const [backgroundPosition, setBackgroundPosition] = useState(0);
-  const [distantBackgroundPosition, setDistantBackgroundPosition] = useState(0);
-  const [ready, setReady] = useState(false);
+  const [initialSession] = useState(() => loadGameSession());
+  const resuming = initialSession !== null;
+
+  const [onStart, setOnStart] = useState(!resuming);
+  const [showBackground, setShowBackground] = useState(resuming);
+  const [backgroundPosition, setBackgroundPosition] = useState(initialSession?.backgroundPosition ?? 0);
+  const [distantBackgroundPosition, setDistantBackgroundPosition] = useState(initialSession?.distantBackgroundPosition ?? 0);
+  const [ready, setReady] = useState(resuming);
   const [robotY, setRobotY] = useState(0);
 
+  useEffect(() => {
+    if (resuming) clearGameSession();
+  }, [resuming]);
+
+  const dispatch = useDispatch();
+  const router = useRouter();
   const isMovingBackwards = useSelector((state: RootState) => state.app.isMovingBackwards);
   const isMovingForwards = useSelector((state: RootState) => state.app.isMovingForwards);
 
@@ -32,70 +53,87 @@ export default function Home() {
 
   const handleStart = async () => {
     play();
-    console.log('pressed')
-    setShowIris(true); // Trigger iris animation
+    dispatch(triggerIris());
 
-    // After 1.8 seconds, hide Start and show just Background
-    const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
     await delay(1800);
-
     setShowBackground(true);
-    setOnStart(false); // Hide the Start button
+    setOnStart(false);
 
-    // Wait 4 seconds before setting 'ready' to true
-    await delay(4000);
+    await delay(2200);
+    dispatch(endIris());
+
+    await delay(1800);
     setReady(true);
   };
 
-  // Create coin pattern
-  const coinRate = 500; // every 500px
-  const coinYOffset = [50, -20, -10]; // place the coins in different spots on y axis
-  const [coins, setCoins] = useState<{ x: number; y: number; id: number }[]>([]);
+  // Coin pattern
+  const coinRate = 500;
+  const coinYOffset = [50, -20, -10];
+  const [coins, setCoins] = useState<{ x: number; y: number; id: number }[]>(
+    initialSession?.coins ?? []
+  );
+  const [coinsCollected, setCoinsCollected] = useState(
+    initialSession?.coinsCollected ?? 0
+  );
   const screenWidth = typeof window !== "undefined" ? window.innerWidth : 1920;
 
-  // Calculate the visible coins based on robot position
-  const lastGeneratedSegment = useRef(Math.floor(-backgroundPosition / coinRate)); // track last segment where coin was generated
-  const lastCoinIndex = useRef(0); // track last used height index for cycling
-
-  // console.log("Background Position:", backgroundPosition);
-  // console.log("Last Segment:", lastGeneratedSegment.current, "Next Segment:", lastGeneratedSegment.current * coinRate + coinRate);
+  const lastGeneratedSegment = useRef(
+    initialSession?.lastGeneratedSegment ?? Math.floor(-backgroundPosition / coinRate)
+  );
+  const lastCoinIndex = useRef(initialSession?.lastCoinIndex ?? 0);
+  const enteredRoutesRef = useRef<string[]>(initialSession?.enteredRoutes ?? []);
 
   useEffect(() => {
     const currentSegment = Math.floor(backgroundPosition / -coinRate);
-  
-    //console.log("Checking Coin Spawn - Current Segment:", currentSegment, "Last Generated:", lastGeneratedSegment.current);
-  
+
     if (!isMovingBackwards && currentSegment > lastGeneratedSegment.current) {
       lastGeneratedSegment.current = currentSegment;
-  
-      // Cycle coin height properly
+
       const nextHeightIndex = lastCoinIndex.current % coinYOffset.length;
       lastCoinIndex.current++;
-  
+
       setCoins((prevCoins) => {
         const filteredCoins = prevCoins.filter((coin) => coin.x > -backgroundPosition - screenWidth * 1.5);
-  
+
         const newCoin = {
           x: -backgroundPosition + screenWidth,
           y: robotY + coinYOffset[nextHeightIndex],
-          id: currentSegment, // Unique ID based on segment
+          id: currentSegment,
         };
-  
+
         return [...filteredCoins, newCoin];
       });
     }
   }, [backgroundPosition, isMovingBackwards, robotY]);
-  
+
   const handleCollectCoin = (coinId: number) => {
-    setCoins((prevCoins) => prevCoins.filter((coin) => coin.id !== coinId)); // Remove collected coin
+    setCoins((prevCoins) => prevCoins.filter((coin) => coin.id !== coinId));
+    setCoinsCollected((n) => n + 1);
+  };
+
+  const handleEnterPage = async (route: string) => {
+    const nextEnteredRoutes = enteredRoutesRef.current.includes(route)
+      ? enteredRoutesRef.current
+      : [...enteredRoutesRef.current, route];
+    enteredRoutesRef.current = nextEnteredRoutes;
+    saveGameSession({
+      backgroundPosition,
+      distantBackgroundPosition,
+      coins,
+      coinsCollected,
+      lastGeneratedSegment: lastGeneratedSegment.current,
+      lastCoinIndex: lastCoinIndex.current,
+      enteredRoutes: nextEnteredRoutes,
+    });
+    dispatch(triggerIris());
+    await delay(1800);
+    router.push(route);
+    await delay(2200);
+    dispatch(endIris());
   };
 
   return (
     <div className="relative h-screen w-screen overflow-hidden">
-      {/* <Link href="/resume" style={{ position: "absolute", zIndex: 99999 }}>
-        <button className="start-button">Go to Resume</button>
-      </Link> */}
-
       <BackgroundWrapper
         position={backgroundPosition}
         distantPosition={distantBackgroundPosition}
@@ -106,11 +144,44 @@ export default function Home() {
 
       {/* Coins */}
       {coins
-      .filter((coin) => coin.x + backgroundPosition > -100 && coin.x + backgroundPosition < screenWidth + 100) // ✅ Only render visible coins
-      .map((coin) => (
-        <Coin key={coin.id} id={coin.id} backgroundPosition={backgroundPosition} x={coin.x} y={coin.y} robotY={robotY} onCollect={() => handleCollectCoin(coin.id)} />
-      ))}
+        .filter((coin) => coin.x + backgroundPosition > -100 && coin.x + backgroundPosition < screenWidth + 100)
+        .map((coin) => (
+          <Coin
+            key={coin.id}
+            id={coin.id}
+            backgroundPosition={backgroundPosition}
+            x={coin.x}
+            y={coin.y}
+            robotY={robotY}
+            onCollect={() => handleCollectCoin(coin.id)}
+          />
+        ))}
 
+      {/* Page icons — hide routes already visited this session */}
+      {PAGES
+        .filter((page) => !enteredRoutesRef.current.includes(page.route))
+        .filter((page) => page.x + backgroundPosition > -100 && page.x + backgroundPosition < screenWidth + 100)
+        .map((page) => (
+          <PageIcon
+            key={page.id}
+            id={page.id}
+            route={page.route}
+            x={page.x}
+            y={robotY + page.yOffset}
+            backgroundPosition={backgroundPosition}
+            robotY={robotY}
+            onEnter={handleEnterPage}
+            icon={page.icon}
+          />
+        ))}
+
+      {!onStart && (
+        <NavMenu
+          onResume={() => handleEnterPage("/resume")}
+          onProjects={() => handleEnterPage("/projects")}
+        />
+      )}
+      {!onStart && <CoinCounter count={coinsCollected} />}
 
       {onStart && (
         <div
@@ -132,18 +203,19 @@ export default function Home() {
 
       {showBackground && (
         <div>
-          <TextBubble ready={ready} scale={scale} />
+          <TextBubble ready={ready} scale={scale} resuming={resuming} />
           <Robot
             ready={ready}
             setBackgroundPosition={setBackgroundPosition}
             setDistantBackgroundPosition={setDistantBackgroundPosition}
             setRobotY={setRobotY}
             scale={scale}
+            resuming={resuming}
+            initialBackgroundPosition={initialSession?.backgroundPosition ?? 0}
+            initialDistantBackgroundPosition={initialSession?.distantBackgroundPosition ?? 0}
           />
         </div>
       )}
-
-      <Iris trigger={showIris} />
 
       <div style={{ display: "none" }}>
         <AudioPlayer onFinish={() => {}} play={true} src="/LatinHouseBed.mp3" />

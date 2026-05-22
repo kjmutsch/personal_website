@@ -4,9 +4,10 @@ import React, { useEffect, useRef, useState } from 'react';
 interface TextBubbleProps {
     ready: boolean;
     scale: number;
+    resuming?: boolean;
 }
 
-function TextBubble({ready, scale}: TextBubbleProps) {
+function TextBubble({ready, scale, resuming = false}: TextBubbleProps) {
     const [delayedReady, setDelayedReady] = useState(false);
     const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -25,10 +26,10 @@ function TextBubble({ready, scale}: TextBubbleProps) {
       };
 
     useEffect(() => {
-        if(ready) {
+        if(ready && !resuming) {
             handleDelay();
         }
-    }, [ready])
+    }, [ready, resuming])
 
         // Add event listener for key presses
         useEffect(() => {

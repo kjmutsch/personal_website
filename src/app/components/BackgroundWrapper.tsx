@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+// Renders the parallax sky, mountains, clouds, and the sun/moon arc.
+import { useEffect, useRef, useState } from "react";
 
 interface BackgroundProps {
   position: number;
@@ -8,30 +9,40 @@ interface BackgroundProps {
   isMovingForwards: boolean;
 }
 
+// Sun/moon arc constants are in absolute pixels so the visual scale of the
+// celestial body and the horizon line stay constant as the viewport shrinks.
+const SUN_SIZE = 350;
+const ARC_PEAK_OFFSET_FROM_TOP = 60;          // sun center y at the top of the arc
+const ARC_HORIZON_OFFSET_FROM_BOTTOM = 220;   // sun center y at the horizon (off-screen entry/exit)
+const SUN_CYCLE_LENGTH = 1100;                // distantPosition units per full sun→moon transit
+
 export default function BackgroundWrapper({ position, distantPosition, startActive, isMovingBackwards, isMovingForwards }: BackgroundProps) {
   const [sunActive, setSunActive] = useState(true);
+  const sunActiveRef = useRef(true);
 
-  // useRef values (don't trigger re-renders)
   const backgroundOpacityRef = useRef(0.7);
   const mountainBrightnessRef = useRef(1);
   const cloudBrightnessRef = useRef(1);
   const cloudPositionsRef = useRef<{ x: number; y: number; size: number; flip: boolean }[]>([]);
-  const lastBrightnessRef = useRef(0.6);
-  const flippedSolar = useRef<boolean>(true);
-  const forwardsAtFlip = useRef<boolean>(false);
-  const forwardsCurr = useRef<boolean | undefined>();
   const frameRef = useRef<number | null>(null);
   const prevDistantPositionRef = useRef(distantPosition);
   const mountainPositionRef = useRef(distantPosition);
-  const [sunInit, setSunInit] = useState(false);
   const sunPositionRef = useRef({ x: 0, y: 0 });
-  const startYRef = useRef(0);
+  const [sunInit, setSunInit] = useState(false);
+  const sunInitRef = useRef(false);
 
-  // Memoize window dimensions to prevent recalculation
-  const { screenWidth, screenHeight } = useMemo(() => ({
+  // Track viewport size so the arc adapts on resize.
+  const [{ screenWidth, screenHeight }, setScreenSize] = useState(() => ({
     screenWidth: typeof window !== "undefined" ? window.innerWidth : 1920,
-    screenHeight: typeof window !== "undefined" ? window.innerHeight : 1080
-  }), []);
+    screenHeight: typeof window !== "undefined" ? window.innerHeight : 1080,
+  }));
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onResize = () => setScreenSize({ screenWidth: window.innerWidth, screenHeight: window.innerHeight });
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   // Cloud Initialization
   const cloudInitialPositions = [screenWidth * 0.2, screenWidth * 0.5, screenWidth * 0.8];
@@ -41,7 +52,6 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
 
   // Initialize components
   useEffect(() => {
-    // Initialize cloud positions
     cloudPositionsRef.current = cloudInitialPositions.map((pos, i) => ({
       x: pos,
       y: cloudYOffset[i],
@@ -49,14 +59,10 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
       flip: Math.random() < 0.5,
     }));
 
-    // Initialize mountain position
     mountainPositionRef.current = distantPosition;
-    // sun start position
-    startYRef.current = screenHeight * 0.6; // about halfway on y axis
-    
-    // fade in clouds
+
     setTimeout(() => setFadeIn(false), 1500);
-    
+
     return () => {
       if (frameRef.current) {
         cancelAnimationFrame(frameRef.current);
@@ -65,121 +71,103 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
     };
   }, []);
 
-  // for tracking movement direction
-  useEffect(() => {
-    if (isMovingBackwards) forwardsCurr.current = false;
-    if (isMovingForwards) forwardsCurr.current = true;
-  }, [isMovingBackwards, isMovingForwards]);
-
   // Main animation loop for all animated elements (cloud, mountain, sun/moon)
   useEffect(() => {
-    // Cancel any existing animation frame
     if (frameRef.current) {
       cancelAnimationFrame(frameRef.current);
       frameRef.current = null;
     }
-    
-    // Initialize position tracking
+
     prevDistantPositionRef.current = distantPosition;
     let lastTimestamp = 0;
-    
-    // article & source link:https://www.kirupa.com/animations/ensuring_consistent_animation_speeds.htm
-    const updateAnimations = (timestamp: number) => {
-      // Calculate time delta for smoother animation, the time delta measures the elapsed time between animation frames
-      // without time delta the animations run at different speeds on different browsers & devices,now actual frame rate doesn't matter
-      // 60 fps is the universal smooth frame rate for animations 
-      const deltaTime = lastTimestamp ? (timestamp - lastTimestamp) / 16.67 : 1; // Normalize to ~60fps, which takes approximately 16.67ms, we are converting milliseconds into frame units
-      lastTimestamp = timestamp;
-      
-      // Calculate position delta
-      let deltaPosition = (distantPosition - prevDistantPositionRef.current);
 
-      // Ensure minimum movement when moving to prevent stutter
+    // article & source link: https://www.kirupa.com/animations/ensuring_consistent_animation_speeds.htm
+    const updateAnimations = (timestamp: number) => {
+      // Normalize to ~60fps frame units so movement speed is independent of refresh rate.
+      const deltaTime = lastTimestamp ? (timestamp - lastTimestamp) / 16.67 : 1;
+      lastTimestamp = timestamp;
+
+      let deltaPosition = distantPosition - prevDistantPositionRef.current;
+
+      // Floor the delta when the player is actively moving so a stalled frame
+      // doesn't cause a hitch in the parallax / cloud motion.
       if (isMovingForwards || isMovingBackwards) {
-        // adds a small amount of movement when delta is too small but movement should happen
         if (Math.abs(deltaPosition) < 0.1) {
           if (isMovingForwards) deltaPosition = -0.1;
           if (isMovingBackwards) deltaPosition = 0.1;
         }
       }
-      
+
       prevDistantPositionRef.current = distantPosition;
       const speedMultiplier = 8.2;
-      // Update mountain position
       mountainPositionRef.current += deltaPosition * speedMultiplier * deltaTime;
-      
-      // Update sun position
-      const sunWidth = 350; // 
-      const sunStartOffset = sunWidth * 0.75;
-      const x = (((distantPosition % (screenWidth + sunStartOffset * 2)) - sunStartOffset) + screenWidth / 3);
-      const h = (screenWidth / 2.2);
-      const sY = startYRef.current;
-      const peakY = 0;
-      const a = (sY - peakY) / Math.pow(h, 2);
-      let y = a * Math.pow(x + h, 2) + peakY;
-      y = Math.min(Math.max(y, -sY), sY);
-      
-      // Save sun position
-      sunPositionRef.current = { x, y };
-      if(!sunInit) setSunInit(true);
-      
-      // Handle sun/moon flipping
-      if (y >= sY && !flippedSolar.current) {
-        setSunActive(prev => !prev);
-        flippedSolar.current = true;
-        forwardsAtFlip.current = isMovingForwards;
-      } else if (y < sY) {
-        flippedSolar.current = false;
+
+      // --- Sun / moon arc ---
+      // Moving forward decreases distantPosition; we want the body to enter from
+      // off-screen-right (phase 0), peak overhead (phase 0.5), and exit off-screen-left (phase 1).
+      // Each full cycle alternates between sun and moon. cycleIndex naturally handles
+      // direction reversal: walking backward decrements it and brings the previous body back.
+      const cycle = -distantPosition / SUN_CYCLE_LENGTH;
+      const cycleIndex = Math.floor(cycle);
+      const phase = cycle - cycleIndex; // [0, 1)
+
+      const horizonCenterY = screenHeight - ARC_HORIZON_OFFSET_FROM_BOTTOM;
+      const peakCenterY = ARC_PEAK_OFFSET_FROM_TOP;
+
+      // Horizontal: sun center sweeps linearly from just-off-right to just-off-left.
+      const centerX = (screenWidth + SUN_SIZE / 2) - phase * (screenWidth + SUN_SIZE);
+
+      // Vertical: parabola that equals 0 at the endpoints and 1 at the peak.
+      const arch = 1 - Math.pow(2 * phase - 1, 2);
+      const centerY = horizonCenterY - (horizonCenterY - peakCenterY) * arch;
+
+      sunPositionRef.current = {
+        x: centerX - SUN_SIZE / 2,
+        y: centerY - SUN_SIZE / 2,
+      };
+
+      if (!sunInitRef.current) {
+        sunInitRef.current = true;
+        setSunInit(true);
       }
-      
-      // Handle direction change during flipped state
-      if (flippedSolar.current && forwardsAtFlip.current !== forwardsCurr.current) {
-        setSunActive(prev => !prev);
-        forwardsAtFlip.current = isMovingForwards;
+
+      // Alternate between sun and moon each cycle. Mod handles negative cycleIndex
+      // (player walked backward past the start).
+      const cycleMod = ((cycleIndex % 2) + 2) % 2;
+      const shouldBeSun = cycleMod === 0;
+      if (sunActiveRef.current !== shouldBeSun) {
+        sunActiveRef.current = shouldBeSun;
+        setSunActive(shouldBeSun);
       }
-      
-      // Update brightness based on sun position
-      const brightnessFactor = y / sY;
+
+      // Brightness: medium-dark at horizon, brightens toward the peak (or darkens for the moon).
       const mediumDark = 0.6;
-      const brightAtZero = 1.0;
-      const darkAtZero = 0.3;
+      const brightAtPeak = 1.0;
+      const darkAtPeak = 0.3;
+      const targetBrightness = shouldBeSun
+        ? mediumDark + (brightAtPeak - mediumDark) * arch
+        : mediumDark - (mediumDark - darkAtPeak) * arch;
 
-      if (y === sY) {
-        lastBrightnessRef.current = mediumDark;
-      }
-      
-      const targetBrightness = sunActive
-        ? mediumDark + (brightAtZero - mediumDark) * (1 - Math.abs(brightnessFactor))
-        : mediumDark - (mediumDark - darkAtZero) * (1 - Math.abs(brightnessFactor));
-
-      // Smooth brightness transitions
       backgroundOpacityRef.current += (targetBrightness - backgroundOpacityRef.current) * 0.6;
       mountainBrightnessRef.current += (targetBrightness - mountainBrightnessRef.current) * 0.6;
       cloudBrightnessRef.current += (targetBrightness - cloudBrightnessRef.current) * 0.6;
-      
+
       // Update cloud positions
       cloudPositionsRef.current = cloudPositionsRef.current.map((cloud) => {
-        // Apply smooth movement with delta time
         let newX = cloud.x - deltaPosition * speedMultiplier * deltaTime;
-        
-        // Wrap clouds around screen edges
         if (newX < -cloud.size) {
           newX += screenWidth + cloud.size;
         } else if (newX > screenWidth) {
           newX -= screenWidth + cloud.size;
         }
-        
         return { ...cloud, x: newX };
       });
 
-      // Request next frame
       frameRef.current = requestAnimationFrame(updateAnimations);
     };
-    
-    // Start animation loop
+
     frameRef.current = requestAnimationFrame(updateAnimations);
-    
-    // Cleanup
+
     return () => {
       if (frameRef.current) {
         cancelAnimationFrame(frameRef.current);
@@ -188,13 +176,10 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
     };
   }, [distantPosition, isMovingForwards, isMovingBackwards, screenWidth, screenHeight]);
 
-  // Get current positions for rendering
   const currentCloudPositions = cloudPositionsRef.current;
   const { x: sunX, y: sunY } = sunPositionRef.current;
-  
-  // Determine whether to use willChange optimization
   const isMoving = isMovingBackwards || isMovingForwards;
-  
+
   return (
     <>
       {/* Sky */}
@@ -211,7 +196,7 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
       {/* Brightness Overlay */}
       <div className="absolute inset-0 w-full h-full"
         style={{
-          zIndex: 4, 
+          zIndex: 4,
           backgroundColor: `rgba(0, 0, 0, ${startActive ? 0 : 1 - backgroundOpacityRef.current})`,
           pointerEvents: "none",
           willChange: isMoving ? 'background-color' : 'auto'
@@ -222,14 +207,16 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
       <div className="absolute inset-0 w-full h-full"
         style={{ zIndex: 5, pointerEvents: "none" }}
       >
-        <img 
-          src={`/images/background/${sunActive ? "sun.png" : "moon.png"}`} 
+        <img
+          src={`/images/background/${sunActive ? "sun.png" : "moon.png"}`}
           alt={sunActive ? "Sun" : "Moon"}
-          className="absolute w-[350px] h-[350px]" 
-          style={{ 
-            top: `${sunY}px`, 
-            right: `${-sunX}px`, 
-            willChange: isMoving ? 'right, top' : 'auto',
+          className="absolute"
+          style={{
+            width: `${SUN_SIZE}px`,
+            height: `${SUN_SIZE}px`,
+            top: `${sunY}px`,
+            left: `${sunX}px`,
+            willChange: isMoving ? 'left, top' : 'auto',
             display: !sunInit ? 'none' : ''
           }}
         />
@@ -249,7 +236,7 @@ export default function BackgroundWrapper({ position, distantPosition, startActi
 
       {/* Clouds */}
       {currentCloudPositions.map((cloud, index) => (
-        <img 
+        <img
           key={index}
           src="/images/background/cloud.png"
           alt="Cloud"
