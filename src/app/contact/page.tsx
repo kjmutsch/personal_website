@@ -85,9 +85,13 @@ export default function Contact() {
       <main className="relative max-w-4xl mx-auto px-4 md:px-10 pt-24 pb-16 space-y-8">
         <motion.section
           className="relative rounded-lg overflow-visible border-2 border-[#2a485c] bg-[#fffaf0]/95 shadow-[6px_6px_0_0_rgba(42,72,92,0.6)]"
-          initial={isMobile ? false : { opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
+          {...(isMobile
+            ? {}
+            : {
+                initial: { opacity: 0, y: 20 },
+                animate: { opacity: 1, y: 0 },
+                transition: { duration: 0.4 },
+              })}
         >
           {!isMobile && (
             <div
@@ -144,10 +148,14 @@ export default function Contact() {
 
         <motion.section
           className="rounded-lg overflow-hidden border-2 border-[#2a485c] bg-[#fffaf0]/95 shadow-[6px_6px_0_0_rgba(42,72,92,0.6)]"
-          initial={isMobile ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
-          whileInView={isMobile ? undefined : { opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 0.4 }}
+          {...(isMobile
+            ? {}
+            : {
+                initial: { opacity: 0, y: 20 },
+                whileInView: { opacity: 1, y: 0 },
+                viewport: { once: true, amount: 0.2 },
+                transition: { duration: 0.4 },
+              })}
         >
           <header
             className="px-5 py-2 border-b-2 border-[#2a485c]"
