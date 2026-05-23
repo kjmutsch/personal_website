@@ -84,6 +84,7 @@ export default function Contact() {
 
       <main className="relative max-w-4xl mx-auto px-4 md:px-10 pt-24 pb-16 space-y-8">
         <motion.section
+          key={isMobile ? "contact-mobile" : "contact-desktop"}
           className="relative rounded-lg overflow-visible border-2 border-[#2a485c] bg-[#fffaf0]/95 shadow-[6px_6px_0_0_rgba(42,72,92,0.6)]"
           {...(isMobile
             ? {}
@@ -147,6 +148,7 @@ export default function Contact() {
         </motion.section>
 
         <motion.section
+          key={isMobile ? "videos-mobile" : "videos-desktop"}
           className="rounded-lg overflow-hidden border-2 border-[#2a485c] bg-[#fffaf0]/95 shadow-[6px_6px_0_0_rgba(42,72,92,0.6)]"
           {...(isMobile
             ? {}

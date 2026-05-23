@@ -29,9 +29,22 @@ const FLAG_X = 4800;
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// Module-level: stays true across client-side route changes (same JS context)
+// but resets on a real document load (refresh, direct visit), so refreshes
+// don't resume from a stale sessionStorage snapshot.
+let hasMountedInDocument = false;
+
 export default function GameHome() {
   const [play] = useSound("/LatinHouseBed.mp3");
-  const [initialSession] = useState(() => loadGameSession());
+  const [initialSession] = useState(() => {
+    if (typeof window === "undefined") return null;
+    if (!hasMountedInDocument) {
+      hasMountedInDocument = true;
+      clearGameSession();
+      return null;
+    }
+    return loadGameSession();
+  });
   const resuming = initialSession !== null;
 
   const [onStart, setOnStart] = useState(!resuming);
