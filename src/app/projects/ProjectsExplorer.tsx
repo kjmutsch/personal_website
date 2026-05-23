@@ -7,6 +7,7 @@ import { useDispatch } from "react-redux";
 import { motion, AnimatePresence } from "framer-motion";
 import NavMenu from "../components/NavMenu";
 import { triggerIris, endIris } from "@/redux/appSlice";
+import { useIsMobile } from "../hooks/useIsMobile";
 
 export type Repo = {
   id: number;
@@ -20,8 +21,6 @@ export type Repo = {
 };
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-const kiaraStyle = { fontFamily: "var(--font-kiara)" };
 
 const formatDate = (iso: string) => {
   try {
@@ -44,6 +43,7 @@ const ProjectsExplorer = ({ repos }: ProjectsExplorerProps) => {
   const [navigating, setNavigating] = useState(false);
   const router = useRouter();
   const dispatch = useDispatch();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (!selected) return;
@@ -57,6 +57,10 @@ const ProjectsExplorer = ({ repos }: ProjectsExplorerProps) => {
   const handleBackToGame = async () => {
     if (navigating) return;
     setNavigating(true);
+    if (isMobile) {
+      router.push("/");
+      return;
+    }
     dispatch(triggerIris());
     await delay(1800);
     router.push("/");
@@ -70,9 +74,8 @@ const ProjectsExplorer = ({ repos }: ProjectsExplorerProps) => {
         type="button"
         onClick={handleBackToGame}
         disabled={navigating}
-        className="fixed top-4 left-6 text-2xl text-white hover:opacity-80 transition-opacity disabled:cursor-default"
+        className="font-kiara fixed top-4 left-6 text-2xl text-white hover:opacity-80 transition-opacity disabled:cursor-default"
         style={{
-          ...kiaraStyle,
           zIndex: 50,
           background: "transparent",
           border: 0,
@@ -82,7 +85,7 @@ const ProjectsExplorer = ({ repos }: ProjectsExplorerProps) => {
             "0 2px 4px rgba(42,72,92,0.7), 0 0 8px rgba(42,72,92,0.5)",
         }}
       >
-        &larr; Back to game
+        &larr; {isMobile ? "Home" : "Back to game"}
       </button>
       <NavMenu />
 
@@ -98,10 +101,7 @@ const ProjectsExplorer = ({ repos }: ProjectsExplorerProps) => {
               <span className="w-3 h-3 rounded-full bg-[#fad37b] border border-[#2a485c]" />
               <span className="w-3 h-3 rounded-full bg-[#7ed3a1] border border-[#2a485c]" />
             </div>
-            <p
-              className="ml-2 text-white text-lg leading-none"
-              style={kiaraStyle}
-            >
+            <p className="font-kiara ml-2 text-white text-lg leading-none">
               Projects — kjmutsch/
             </p>
           </div>
@@ -138,10 +138,7 @@ const ProjectsExplorer = ({ repos }: ProjectsExplorerProps) => {
                       className="w-20 h-20 group-hover:scale-110 transition-transform"
                       draggable={false}
                     />
-                    <span
-                      className="text-sm text-center text-[#2a485c] break-words leading-tight"
-                      style={kiaraStyle}
-                    >
+                    <span className="font-kiara text-sm text-center text-[#2a485c] break-words leading-tight">
                       {repo.name}
                     </span>
                   </button>
@@ -187,8 +184,7 @@ const ProjectsExplorer = ({ repos }: ProjectsExplorerProps) => {
               >
                 <p
                   id="repo-modal-title"
-                  className="text-white text-xl leading-none"
-                  style={kiaraStyle}
+                  className="font-kiara text-white text-xl leading-none"
                 >
                   {selected.name}
                 </p>
@@ -236,8 +232,7 @@ const ProjectsExplorer = ({ repos }: ProjectsExplorerProps) => {
                     href={selected.html_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-4 py-2 rounded bg-[#fad37b] text-[#2a485c] border-2 border-[#2a485c] shadow-[2px_2px_0_0_rgba(42,72,92,0.6)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all text-sm"
-                    style={kiaraStyle}
+                    className="font-kiara px-4 py-2 rounded bg-[#fad37b] text-[#2a485c] border-2 border-[#2a485c] shadow-[2px_2px_0_0_rgba(42,72,92,0.6)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all text-sm"
                   >
                     View on GitHub
                   </a>
@@ -246,8 +241,7 @@ const ProjectsExplorer = ({ repos }: ProjectsExplorerProps) => {
                       href={selected.homepage}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="px-4 py-2 rounded bg-[#a8d8f0] text-[#2a485c] border-2 border-[#2a485c] shadow-[2px_2px_0_0_rgba(42,72,92,0.6)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all text-sm"
-                      style={kiaraStyle}
+                      className="font-kiara px-4 py-2 rounded bg-[#a8d8f0] text-[#2a485c] border-2 border-[#2a485c] shadow-[2px_2px_0_0_rgba(42,72,92,0.6)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-none transition-all text-sm"
                     >
                       Live site
                     </a>

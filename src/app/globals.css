@@ -38,6 +38,55 @@ img {
   height: auto;
 }
 
+/* App-wide custom scrollbar: a slim, fully-rounded white pill on a
+   transparent track. Firefox uses scrollbar-color/-width; WebKit uses the
+   pseudo-elements. The thumb's height is browser-controlled and
+   proportional to viewport/content — so on pages that barely overflow,
+   it will naturally take up most of the track. */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.65) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+  background-color: transparent;
+}
+
+::-webkit-scrollbar-track,
+::-webkit-scrollbar-track-piece {
+  background-color: transparent;
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.65);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+::-webkit-scrollbar-button,
+::-webkit-scrollbar-button:start,
+::-webkit-scrollbar-button:end,
+::-webkit-scrollbar-button:single-button,
+::-webkit-scrollbar-button:double-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Kiara is a top-heavy display font: glyphs sit visually high in the line box,
+   which throws off vertical centering against icons/buttons. Nudge it down.
+   Using transform instead of position so it doesn't clobber `fixed`/`absolute`. */
+.font-kiara {
+  font-family: var(--font-kiara);
+  transform: translateY(0.08em);
+}
+
 
 @layer base {
   :root {

@@ -4,7 +4,8 @@ import { animate, motion, useMotionValue } from 'framer-motion';
 // Framer Motion differs from react because react makes a virtual DOM, compares it to the previous one, calculates the minimum changes needed,
 // then batches these changes and updates the real DOM
 // whereas FM updates the DOM elements directly and uses browser's requestAnimationFrame API 
-import { useAppDispatch } from "../../redux/store";
+import { useSelector } from "react-redux";
+import { RootState, useAppDispatch } from "../../redux/store";
 import { setIsJumping, setIsMovingBackward, setIsMovingForwards } from "../../redux/appSlice";
 
 interface RobotProps {
@@ -16,6 +17,7 @@ interface RobotProps {
     resuming?: boolean;
     initialBackgroundPosition?: number;
     initialDistantBackgroundPosition?: number;
+    gameEnded?: boolean;
 }
 
 function Robot({
@@ -27,8 +29,10 @@ function Robot({
     resuming = false,
     initialBackgroundPosition = 0,
     initialDistantBackgroundPosition = 0,
+    gameEnded = false,
 }: RobotProps) {
     const dispatch = useAppDispatch();
+    const isIrisActive = useSelector((state: RootState) => state.app.isIrisActive);
     const [introduction, setIntroduction] = useState(!resuming);
     const [isMovingForward, setMovingForward] = useState(false);
     const [isMovingBackwards, setMovingBackward] = useState(false);
@@ -149,6 +153,8 @@ function Robot({
                 }
             }
 
+            if (gameEnded || isIrisActive) return;
+
             if (event.key === " " && introduction && !jumpRef.current) {
                 setJump(true);
                 jumpRef.current = true;
@@ -194,7 +200,17 @@ function Robot({
             window.removeEventListener('keydown', handleKeyDown);
             window.removeEventListener('keyup', handleKeyUp);
         };
-    }, [introduction, dispatch]);
+    }, [introduction, dispatch, gameEnded, isIrisActive]);
+
+    // Halt the robot the moment the game ends or an iris transition starts,
+    // even if a movement key is still being held.
+    useEffect(() => {
+        if (!gameEnded && !isIrisActive) return;
+        setMovingForward(false);
+        setMovingBackward(false);
+        dispatch(setIsMovingForwards(false));
+        dispatch(setIsMovingBackward(false));
+    }, [gameEnded, isIrisActive, dispatch]);
 
     return (
         <div

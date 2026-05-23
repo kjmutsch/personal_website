@@ -2,10 +2,12 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useDispatch } from "react-redux";
 import { motion } from "framer-motion";
 import NavMenu from "../components/NavMenu";
 import { triggerIris, endIris } from "@/redux/appSlice";
+import { useIsMobile } from "../hooks/useIsMobile";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -132,23 +134,24 @@ const PROJECTS = [
   "Built core computer science and machine learning concepts from scratch (decision trees, linked lists, etc.) to develop a deep understanding of underlying algorithms and data structures.",
 ];
 
-const kiaraStyle = { fontFamily: "var(--font-kiara)" };
-
 const DoodleScatter = () => (
   <div
     aria-hidden="true"
     className="pointer-events-none absolute inset-0 overflow-hidden hidden md:block"
   >
     {DOODLES.map((d, i) => (
-      <img
+      <Image
         key={`${d.name}-${i}`}
         src={`/images/doodles/doodles_${d.name}.svg`}
         alt=""
+        width={d.size}
+        height={d.size}
         className="absolute opacity-80"
         style={{
           top: d.top,
           left: d.left,
           width: `${d.size}px`,
+          height: "auto",
           transform: `translate(-50%, -50%) rotate(${d.rotate}deg)`,
         }}
       />
@@ -170,7 +173,10 @@ const SectionCard = ({ title, headerColor, children }: SectionCardProps) => {
       className="rounded-lg overflow-hidden border-2 border-[#2a485c] bg-[#fffaf0]/90 backdrop-blur-sm shadow-[4px_4px_0_0_rgba(42,72,92,0.6)]"
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.2 }}
+      // Shrink the trigger zone away from the bottom of the viewport so
+      // short sidebar cards (Contact, Education) don't fire their reveal
+      // animation while they're still sitting near the page fold at load.
+      viewport={{ once: true, amount: 0.3, margin: "0px 0px -25% 0px" }}
       transition={{ duration: 0.4 }}
     >
       <header
@@ -178,8 +184,8 @@ const SectionCard = ({ title, headerColor, children }: SectionCardProps) => {
         style={{ backgroundColor: headerBg }}
       >
         <h2
-          className="text-2xl tracking-wide"
-          style={{ ...kiaraStyle, color: headerText }}
+          className="font-kiara text-2xl tracking-wide"
+          style={{ color: headerText }}
         >
           {title}
         </h2>
@@ -194,6 +200,7 @@ export default function Resume() {
   const [navigating, setNavigating] = useState(false);
   const router = useRouter();
   const dispatch = useDispatch();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -208,6 +215,10 @@ export default function Resume() {
   const handleBackToGame = async () => {
     if (navigating) return;
     setNavigating(true);
+    if (isMobile) {
+      router.push("/");
+      return;
+    }
     dispatch(triggerIris());
     await delay(1800);
     router.push("/");
@@ -216,14 +227,13 @@ export default function Resume() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#a8d8f0] via-[#7eb3cf] to-[#2a485c] text-[#2a485c] overflow-auto relative">
+    <div className="h-screen overflow-y-auto bg-gradient-to-b from-[#a8d8f0] via-[#7eb3cf] to-[#2a485c] text-[#2a485c] relative">
       <button
         type="button"
         onClick={handleBackToGame}
         disabled={navigating}
-        className="fixed top-4 left-6 text-2xl text-white hover:opacity-80 transition-opacity disabled:cursor-default"
+        className="font-kiara fixed top-4 left-6 text-2xl text-white hover:opacity-80 transition-opacity disabled:cursor-default"
         style={{
-          ...kiaraStyle,
           zIndex: 50,
           background: "transparent",
           border: 0,
@@ -233,7 +243,7 @@ export default function Resume() {
             "0 2px 4px rgba(42,72,92,0.7), 0 0 8px rgba(42,72,92,0.5)",
         }}
       >
-        &larr; Back to game
+        &larr; {isMobile ? "Home" : "Back to game"}
       </button>
       <NavMenu />
 
@@ -245,10 +255,10 @@ export default function Resume() {
             <div className="flex flex-col md:flex-row gap-6">
               <div className="shrink-0 flex flex-col items-center gap-3">
                 <div className="w-40 h-40 rounded-full border-8 border-dotted border-[#fad37b] bg-[#5a8eaa] flex items-center justify-center text-7xl text-white">
-                  <span style={kiaraStyle}>K</span>
+                  <span className="font-kiara">K</span>
                 </div>
                 <div className="text-center text-sm leading-snug">
-                  <p className="text-xl" style={kiaraStyle}>
+                  <p className="font-kiara text-xl">
                     Kiara Mutschler
                   </p>
                   <p>Saint Paul, MN</p>
@@ -257,10 +267,26 @@ export default function Resume() {
                   </p>
                 </div>
               </div>
-              <div className="flex-1 italic text-[#5a8eaa] text-sm leading-relaxed flex items-center">
+              <div className="flex-1 italic text-[#5a8eaa] text-sm leading-relaxed flex flex-col justify-center gap-3">
                 <p>
-                  [About Me copy goes here — creative pursuits, fun facts from
-                  my work, and a little about how this website came together.]
+                  I built this site to stretch my creativity and Photoshop
+                  skills next to my programming ones. I made as much of it
+                  as I possibly could myself: the background scenery and the
+                  robot from the home page were painted in Photoshop, the
+                  start button and the doodles bordering this page were drawn
+                  on paper and digitized, and even the{" "}
+                  <span className="font-kiara not-italic text-[#2a485c] text-base">
+                    handwritten font
+                  </span>{" "}
+                  is my own handwriting turned into a typeface.
+                </p>
+                <p>
+                  Outside of work you&apos;ll usually find me crafting or
+                  designing something, whether that&apos;s illustrating,
+                  gardening, sewing, or building little side projects like
+                  this one. I try to find the beauty and the fun in
+                  everything I make, whether it&apos;s for work or just for
+                  me.
                 </p>
               </div>
             </div>
@@ -370,10 +396,7 @@ export default function Resume() {
                       key={role.title + role.years}
                       className="border-l-4 border-[#fad37b] pl-4"
                     >
-                      <p
-                        className="text-xl leading-tight"
-                        style={kiaraStyle}
-                      >
+                      <p className="font-kiara text-xl leading-tight">
                         {role.title}
                       </p>
                       <p className="text-sm text-[#5a8eaa]">
@@ -410,13 +433,19 @@ export default function Resume() {
             </div>
           </div>
 
-          <section className="pt-8 pb-4 flex justify-center">
+          <section className="pt-8 pb-4 flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <a
+              href="/Kiara_Mutschler_Resume.pdf"
+              download
+              className="font-kiara px-8 py-4 rounded-full bg-[#5a8eaa] text-white text-2xl border-2 border-[#2a485c] shadow-[4px_4px_0_0_rgba(42,72,92,0.6)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[2px_2px_0_0_rgba(42,72,92,0.6)] transition-all"
+            >
+              Download Resume
+            </a>
             <button
               type="button"
               onClick={handleBackToGame}
               disabled={navigating}
-              className="px-8 py-4 rounded-full bg-[#fad37b] text-[#2a485c] text-2xl border-2 border-[#2a485c] shadow-[4px_4px_0_0_rgba(42,72,92,0.6)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[2px_2px_0_0_rgba(42,72,92,0.6)] transition-all disabled:opacity-70 disabled:cursor-default"
-              style={kiaraStyle}
+              className="font-kiara px-8 py-4 rounded-full bg-[#fad37b] text-[#2a485c] text-2xl border-2 border-[#2a485c] shadow-[4px_4px_0_0_rgba(42,72,92,0.6)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[2px_2px_0_0_rgba(42,72,92,0.6)] transition-all disabled:opacity-70 disabled:cursor-default hidden md:inline-block"
             >
               Continue Game
             </button>
