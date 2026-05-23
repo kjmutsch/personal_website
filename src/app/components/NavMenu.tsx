@@ -50,7 +50,7 @@ const NavMenu = ({ onResume, onProjects, onContact }: NavMenuProps) => {
   } as const;
 
   const textShadow =
-    "0 2px 4px rgba(42,72,92,0.7), 0 0 8px rgba(42,72,92,0.5)";
+    "-1px -1px 0 rgba(42,72,92,0.95), 1px -1px 0 rgba(42,72,92,0.95), -1px 1px 0 rgba(42,72,92,0.95), 1px 1px 0 rgba(42,72,92,0.95), 0 2px 4px rgba(42,72,92,0.85), 0 0 10px rgba(42,72,92,0.55)";
 
   if (isMobile) {
     return (
