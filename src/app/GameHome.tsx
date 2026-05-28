@@ -3,9 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
-import useSound from "use-sound";
 import Start from "./components/Start";
-import AudioPlayer from "./components/AudioPlayer";
 import Robot from "./components/Robot";
 import TextBubble from "./components/TextBubble";
 import BackgroundWrapper from "./components/BackgroundWrapper";
@@ -15,7 +13,7 @@ import Flag from "./components/Flag";
 import NavMenu from "./components/NavMenu";
 import CoinCounter from "./components/CoinCounter";
 import { RootState } from "@/redux/store";
-import { triggerIris, endIris } from "@/redux/appSlice";
+import { triggerIris, endIris, setMusicPlaying } from "@/redux/appSlice";
 import { clearGameSession, loadGameSession, saveGameSession } from "./lib/gameSession";
 
 const PAGES: { id: string; route: string; x: number; yOffset: number; icon?: string }[] = [
@@ -35,7 +33,6 @@ const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 let hasMountedInDocument = false;
 
 export default function GameHome() {
-  const [play] = useSound("/LatinHouseBed.mp3");
   const [initialSession] = useState(() => {
     if (typeof window === "undefined") return null;
     if (!hasMountedInDocument) {
@@ -70,7 +67,7 @@ export default function GameHome() {
   const scale = screenHeight / SVG_BASE_HEIGHT;
 
   const handleStart = async () => {
-    play();
+    dispatch(setMusicPlaying(true));
     dispatch(triggerIris());
 
     await delay(1800);
@@ -129,6 +126,17 @@ export default function GameHome() {
     setCoinsCollected((n) => n + 1);
   };
 
+  const handleGameEnd = async () => {
+    // Time the "The End" reveal with the iris transition: trigger the iris,
+    // wait for it to fully close (1.8s), then flip gameEnded so the end screen
+    // appears behind the black hold and is revealed during the iris-out.
+    dispatch(triggerIris());
+    await delay(1800);
+    setGameEnded(true);
+    await delay(2200);
+    dispatch(endIris());
+  };
+
   const handleEnterPage = async (route: string) => {
     const nextEnteredRoutes = enteredRoutesRef.current.includes(route)
       ? enteredRoutesRef.current
@@ -181,8 +189,9 @@ export default function GameHome() {
           x={FLAG_X}
           backgroundPosition={backgroundPosition}
           robotY={robotY}
+          scale={scale}
           gameEnded={gameEnded}
-          onReach={() => setGameEnded(true)}
+          onReach={handleGameEnd}
         />
       )}
 
@@ -250,7 +259,7 @@ export default function GameHome() {
 
       {gameEnded && (
         <div
-          className="absolute inset-0 flex items-center justify-center pointer-events-none"
+          className="absolute inset-0 flex flex-col items-center justify-center gap-8 pointer-events-none"
           style={{ zIndex: 10000 }}
         >
           <img
@@ -264,12 +273,19 @@ export default function GameHome() {
             }}
             draggable={false}
           />
+          <button
+            type="button"
+            onClick={() => {
+              clearGameSession();
+              window.location.reload();
+            }}
+            className="font-kiara pointer-events-auto px-8 py-4 rounded-full bg-[#fad37b] text-[#2a485c] text-2xl border-2 border-[#2a485c] shadow-[4px_4px_0_0_rgba(42,72,92,0.6)] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[2px_2px_0_0_rgba(42,72,92,0.6)] transition-all"
+          >
+            Restart game
+          </button>
         </div>
       )}
 
-      <div style={{ display: "none" }}>
-        <AudioPlayer onFinish={() => {}} play={true} src="/LatinHouseBed.mp3" />
-      </div>
     </div>
   );
 }

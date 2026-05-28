@@ -4,6 +4,7 @@ import { Inter, Press_Start_2P } from "next/font/google";
 import localFont from "next/font/local";
 import ReduxProvider from "../redux/ReduxProvider";
 import IrisOverlay from "./components/IrisOverlay";
+import MusicPlayer from "./components/MusicPlayer";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -37,6 +38,7 @@ export default function RootLayout({
         <ReduxProvider>
           {children}
           <IrisOverlay />
+          <MusicPlayer />
         </ReduxProvider>
       </body>
     </html>

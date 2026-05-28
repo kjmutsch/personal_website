@@ -232,40 +232,51 @@ function Robot({
                     }}
                     style={{ position: "absolute" }}
                 >
-                    <motion.div style={{ y: yPositionValue }}> 
+                    <motion.div style={{ y: yPositionValue }}>
                         {/* direct connection between yPositionValue and the DOM element's transform property */}
-                        {/* Robot's body */}
-                        <div className="body">
-                            <img src="/images/robot/body.png" alt="Body" />
+                        {/* Single scale wrapper keeps body, arms, and wheels proportional at every
+                            viewport height. Without it the body image renders at its natural pixel size
+                            while only the arm/wheel offsets scale — parts drift apart or overlap. */}
+                        <div
+                            style={{
+                                position: 'relative',
+                                transform: `scale(${scale})`,
+                                transformOrigin: 'top center',
+                            }}
+                        >
+                            {/* Robot's body */}
+                            <div className="body">
+                                <img src="/images/robot/body.png" alt="Body" />
+                            </div>
+
+                            {/* Left Arm */}
+                            <img
+                                src="images/robot/robot_left.png"
+                                className="left-arm"
+                                style={{ position: 'absolute', top: '45px', left: '-3px' }}
+                            />
+
+                            {/* Right Arm */}
+                            <img
+                                src="images/robot/robot_right.png"
+                                className="right-arm"
+                                style={{ position: 'absolute', top: '45px', left: '72px' }}
+                            />
+
+                            {/* Left Wheel */}
+                            <motion.img
+                                src="images/robot/robot_wheel.png"
+                                className="left-wheel"
+                                style={{ position: 'absolute', top: '85px', left: '20px', rotate: rotationValue }}
+                            />
+
+                            {/* Right Wheel */}
+                            <motion.img
+                                src="images/robot/robot_wheel.png"
+                                className="right-wheel"
+                                style={{ position: 'absolute', top: '85px', left: '50px', rotate: rotationValue }}
+                            />
                         </div>
-
-                        {/* Left Arm */}
-                        <img
-                            src="images/robot/robot_left.png"
-                            className="left-arm"
-                            style={{ position: 'absolute', top: `${45 * scale}px`, left: '-3px' }}
-                        />
-
-                        {/* Right Arm */}
-                        <img
-                            src="images/robot/robot_right.png"
-                            className="right-arm"
-                            style={{ position: 'absolute', top: `${45 * scale}px`, left: '72px' }}
-                        />
-
-                        {/* Left Wheel */}
-                        <motion.img
-                            src="images/robot/robot_wheel.png"
-                            className="left-wheel"
-                            style={{ position: 'absolute', top: `${85 * scale}px`, left: '20px', rotate: rotationValue }}
-                        />
-
-                        {/* Right Wheel */}
-                        <motion.img
-                            src="images/robot/robot_wheel.png"
-                            className="right-wheel"
-                            style={{ position: 'absolute', top: `${85 * scale}px`, left: '50px', rotate: rotationValue }}
-                        />
                     </motion.div>
                 </motion.div>
             )}
