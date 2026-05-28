@@ -1,8 +1,7 @@
 // Resume page reached via the in-world page icon or the top-right quick-nav.
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { useDispatch } from "react-redux";
 import { motion } from "framer-motion";
 import NavMenu from "../components/NavMenu";
@@ -140,12 +139,15 @@ const DoodleScatter = () => (
     className="pointer-events-none absolute inset-0 overflow-hidden hidden md:block"
   >
     {DOODLES.map((d, i) => (
-      <Image
+      // Plain <img> — next/image's required width/height props force an aspect
+      // ratio that the SVG sources don't all share (e.g. mountain is ~3:2),
+      // which triggers the "modified width/height" runtime warning. SVGs don't
+      // benefit from next/image optimization anyway.
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
         key={`${d.name}-${i}`}
         src={`/images/doodles/doodles_${d.name}.svg`}
         alt=""
-        width={d.size}
-        height={d.size}
         className="absolute opacity-80"
         style={{
           top: d.top,
@@ -163,20 +165,36 @@ type SectionCardProps = {
   title: string;
   headerColor: "blue" | "yellow";
   children: React.ReactNode;
+  // When true, the card stays at its initial (hidden) state until the user
+  // has scrolled. Prevents short sidebar cards from animating in on load
+  // when the viewport is tall enough that they sit above the fold.
+  waitForScroll?: boolean;
+  hasScrolled?: boolean;
 };
 
-const SectionCard = ({ title, headerColor, children }: SectionCardProps) => {
+const SectionCard = ({
+  title,
+  headerColor,
+  children,
+  waitForScroll = false,
+  hasScrolled = false,
+}: SectionCardProps) => {
   const headerBg = headerColor === "blue" ? "#5a8eaa" : "#fad37b";
   const headerText = headerColor === "blue" ? "#ffffff" : "#2a485c";
+  // Gated cards drive their reveal directly off scroll instead of the
+  // IntersectionObserver path — whileInView with `once: true` doesn't reliably
+  // re-attach when the prop flips from undefined to a target value.
+  const revealProps = waitForScroll
+    ? { animate: hasScrolled ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 } }
+    : {
+        whileInView: { opacity: 1, y: 0 },
+        viewport: { once: true, amount: 0.3, margin: "0px 0px -25% 0px" },
+      };
   return (
     <motion.section
       className="rounded-lg overflow-hidden border-2 border-[#2a485c] bg-[#fffaf0]/90 backdrop-blur-sm shadow-[4px_4px_0_0_rgba(42,72,92,0.6)]"
       initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      // Shrink the trigger zone away from the bottom of the viewport so
-      // short sidebar cards (Contact, Education) don't fire their reveal
-      // animation while they're still sitting near the page fold at load.
-      viewport={{ once: true, amount: 0.3, margin: "0px 0px -25% 0px" }}
+      {...revealProps}
       transition={{ duration: 0.4 }}
     >
       <header
@@ -197,19 +215,26 @@ const SectionCard = ({ title, headerColor, children }: SectionCardProps) => {
 
 export default function Resume() {
   const [hideArrow, setHideArrow] = useState(false);
+  const [hasScrolled, setHasScrolled] = useState(false);
   const [navigating, setNavigating] = useState(false);
   const router = useRouter();
   const dispatch = useDispatch();
   const isMobile = useIsMobile();
+  // The page scrolls inside its own `h-screen overflow-y-auto` div — not the
+  // window — so we attach the scroll listener to that container directly.
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
     const handleScroll = () => {
-      if (window.scrollY > window.innerHeight * 0.2) {
+      if (container.scrollTop > 0) setHasScrolled(true);
+      if (container.scrollTop > window.innerHeight * 0.2) {
         setHideArrow(true);
       }
     };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    container.addEventListener("scroll", handleScroll, { passive: true });
+    return () => container.removeEventListener("scroll", handleScroll);
   }, []);
 
   const handleBackToGame = async () => {
@@ -227,7 +252,7 @@ export default function Resume() {
   };
 
   return (
-    <div className="h-screen overflow-y-auto bg-gradient-to-b from-[#a8d8f0] via-[#7eb3cf] to-[#2a485c] text-[#2a485c] relative">
+    <div ref={scrollContainerRef} className="h-screen overflow-y-auto bg-gradient-to-b from-[#a8d8f0] via-[#7eb3cf] to-[#2a485c] text-[#2a485c] relative">
       <button
         type="button"
         onClick={handleBackToGame}
@@ -305,7 +330,7 @@ export default function Resume() {
 
           <div className="grid md:grid-cols-3 gap-6">
             <aside className="space-y-6 md:col-span-1">
-              <SectionCard title="Contact" headerColor="blue">
+              <SectionCard title="Contact" headerColor="blue" waitForScroll hasScrolled={hasScrolled}>
                 <table className="w-full text-sm">
                   <tbody className="align-top">
                     <tr>

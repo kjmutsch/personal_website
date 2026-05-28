@@ -6,6 +6,7 @@ interface AppState {
   isMovingForwards: boolean;
   isJumping: boolean;
   isIrisActive: boolean;
+  isMusicPlaying: boolean;
 }
 
 const initialState: AppState = {
@@ -13,6 +14,7 @@ const initialState: AppState = {
   isMovingForwards: false,
   isJumping: false,
   isIrisActive: false,
+  isMusicPlaying: false,
 };
 
 const appSlice = createSlice({
@@ -34,6 +36,9 @@ const appSlice = createSlice({
     endIris: (state) => {
       state.isIrisActive = false;
     },
+    setMusicPlaying: (state, action: PayloadAction<boolean>) => {
+      state.isMusicPlaying = action.payload;
+    },
   },
 });
 
@@ -43,5 +48,6 @@ export const {
   setIsJumping,
   triggerIris,
   endIris,
+  setMusicPlaying,
 } = appSlice.actions;
 export default appSlice.reducer;

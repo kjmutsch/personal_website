@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useIsMobile } from "../hooks/useIsMobile";
+import MusicToggle from "./MusicToggle";
 
 interface NavMenuProps {
   onResume?: () => void;
@@ -55,6 +56,12 @@ const NavMenu = ({ onResume, onProjects, onContact }: NavMenuProps) => {
   if (isMobile) {
     return (
       <>
+        <div
+          className="fixed text-white"
+          style={{ zIndex: 110, top: "4.25rem", right: "1.5rem" }}
+        >
+          <MusicToggle />
+        </div>
         <button
           type="button"
           aria-label={open ? "Close menu" : "Open menu"}
@@ -129,11 +136,12 @@ const NavMenu = ({ onResume, onProjects, onContact }: NavMenuProps) => {
   }
 
   return (
-    <nav
-      className="font-kiara fixed top-4 right-6 flex items-center gap-6 text-white text-2xl select-none"
-      style={{ zIndex: 100, textShadow }}
-    >
-      {onResume && !isResumeActive ? (
+    <>
+      <nav
+        className="font-kiara fixed top-4 right-6 flex items-center gap-6 text-white text-2xl select-none"
+        style={{ zIndex: 100, textShadow }}
+      >
+        {onResume && !isResumeActive ? (
         <button
           type="button"
           onClick={onResume}
@@ -186,7 +194,14 @@ const NavMenu = ({ onResume, onProjects, onContact }: NavMenuProps) => {
           Contact
         </Link>
       )}
-    </nav>
+      </nav>
+      <div
+        className="fixed text-white"
+        style={{ zIndex: 100, top: "3.25rem", right: "1.5rem" }}
+      >
+        <MusicToggle />
+      </div>
+    </>
   );
 };
 
